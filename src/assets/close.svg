@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="16px" height="16px" viewBox="0 0 16 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 58 (84663) - https://sketch.com -->
+    <title>icon/finance/salary/outline/salary-outline-16px</title>
+    <desc>Created with Sketch.</desc>
+    <g id="icon/finance/salary/outline/salary-outline-16px" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="payment">
+            <rect id="Rectangle" x="0" y="0" width="16" height="16"></rect>
+            <g id="Group">
+                <polyline id="Path" stroke="#010709" stroke-linecap="square" points="5.36 10.05 0.67 10.05 0.67 3.35 15.41 3.35 15.41 10.72"></polyline>
+                <path d="M3.35,10.05 L3.35,10.39 C3.47259281,13.0780261 5.68896307,15.1935099 8.37978192,15.190835 C11.0706008,15.1881551 13.2827567,13.0682647 13.4,10.38 L13.4,5.36 C11.9198769,5.36 10.72,6.55987687 10.72,8.04 L10.72,9.38 C9.23987687,9.38 8.04,10.5798769 8.04,12.06" id="Path" stroke="#010709" stroke-linecap="square"></path>
+                <path d="M8.04,6.03 C7.66996922,6.03 7.37,6.32996922 7.37,6.7 C7.37,7.07003078 7.66996922,7.37 8.04,7.37 C8.41003078,7.37 8.71,7.07003078 8.71,6.7 C8.71,6.32996922 8.41003078,6.03 8.04,6.03 Z" id="Path" stroke="#1E8CED" stroke-linecap="square"></path>
+                <path d="M8.04,6.03 C7.66996922,6.03 7.37,6.32996922 7.37,6.7 C7.37,7.07003078 7.66996922,7.37 8.04,7.37 C8.41003078,7.37 8.71,7.07003078 8.71,6.7 C8.71,6.32996922 8.41003078,6.03 8.04,6.03 Z" id="Path" fill="#1E8CED" fill-rule="nonzero"></path>
+                <path d="M12.73,3.35 L12.73,2.68 C12.73,1.56990765 11.8300923,0.67 10.72,0.67 L5.36,0.67 C4.24990765,0.67 3.35,1.56990765 3.35,2.68 L3.35,3.35" id="Path" stroke="#010709" stroke-linecap="square"></path>
+            </g>
+        </g>
+    </g>
+</svg>

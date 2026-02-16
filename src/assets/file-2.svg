@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="16px" height="16px" viewBox="0 0 16 16" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 58 (84663) - https://sketch.com -->
+    <title>icon/finance/accounting/outline/accounting-outline-16px</title>
+    <desc>Created with Sketch.</desc>
+    <g id="icon/finance/accounting/outline/accounting-outline-16px" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="math">
+            <rect id="Rectangle" x="0" y="0" width="16" height="16"></rect>
+            <g id="Group" transform="translate(0.000000, 1.000000)" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3.5,0.5 L3.5,6.5" id="Path" stroke="#010709"></path>
+                <path d="M0.5,3.5 L6.5,3.5" id="Path" stroke="#010709"></path>
+                <path d="M9.5,3.5 L15.5,3.5" id="Path" stroke="#1E8CED"></path>
+                <path d="M9.5,10.5 L15.5,10.5" id="Path" stroke="#010709"></path>
+                <path d="M9.5,13.5 L15.5,13.5" id="Path" stroke="#010709"></path>
+                <path d="M1,9.5 L6,14.5" id="Path" stroke="#1E8CED"></path>
+                <path d="M6,9.5 L1,14.5" id="Path" stroke="#1E8CED"></path>
+            </g>
+        </g>
+    </g>
+</svg>
