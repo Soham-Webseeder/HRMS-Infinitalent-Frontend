@@ -32,6 +32,7 @@ const EmployeeLeavePolicy = () => {
   const handleSaveClick = async () => {
     const formData = new FormData();
     formData.append("title", title);
+    formData.append("category", "Leave");
     const updatedDescription = description;
     formData.append("description", updatedDescription);
     if (document) {
@@ -70,7 +71,7 @@ const EmployeeLeavePolicy = () => {
 
   const fetchPolicies = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_APP_BASE_URL}/company/getAllPolicies`);
+      const response = await axios.get(`${import.meta.env.VITE_APP_BASE_URL}/company/getAllPolicies?category=Leave`);
       const hrPolicy = response.data.data.find((policy) => policy.description.trim() === 'employee-leave-policy');
       if (hrPolicy) {
         setPolicy(hrPolicy);

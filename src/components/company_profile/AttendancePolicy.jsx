@@ -6,15 +6,16 @@ const AttendancePolicy = () => {
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
   const [document, setDocument] = useState(null);
   const [policy, setPolicy] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Define your server image/base URL
+  const IMG_URL = import.meta.env.VITE_APP_IMG_URL; 
+
   const handleAddClick = () => {
     setTitle("");
-    setDescription("attendance-policy");
     setDocument(null);
     setIsEditing(false);
     setShowForm(true);
@@ -23,40 +24,34 @@ const AttendancePolicy = () => {
   const handleEditClick = () => {
     if (policy) {
       setTitle(policy.title);
-      setDescription(policy.description.replace(" attendance-policy", ""));
       setIsEditing(true);
       setShowForm(true);
     }
   };
 
   const handleSaveClick = async () => {
+    if (!title || (!document && !isEditing)) {
+      alert("Please provide a title and a document.");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("title", title);
+    // This category matches your backend schema filter
+    formData.append("category", "Attendance"); 
 
-    // Ensure the description is set to "attendance-policy"
-    const updatedDescription =
-      description.trim() === "" ? "attendance-policy" : description;
-    formData.append("description", updatedDescription);
-
-    // Ensure the file is a PDF
-    if (document && document.type === "application/pdf") {
-      formData.append("document", document); // This will upload the file in its native format
-    } else {
-      alert("Please upload a PDF file.");
-      return;
+    if (document) {
+      // Ensure local file is attached
+      formData.append("document", document); 
     }
 
     try {
       if (isEditing && policy) {
         await axios.patch(
-          `${import.meta.env.VITE_APP_BASE_URL}/company/updatePolicy/${
-            policy._id
-          }`,
+          `${import.meta.env.VITE_APP_BASE_URL}/company/updatePolicy/${policy._id}`,
           formData,
           {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
+            headers: { "Content-Type": "multipart/form-data" },
           }
         );
       } else {
@@ -64,14 +59,12 @@ const AttendancePolicy = () => {
           `${import.meta.env.VITE_APP_BASE_URL}/company/createPolicy`,
           formData,
           {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
+            headers: { "Content-Type": "multipart/form-data" },
           }
         );
       }
       setShowForm(false);
-      fetchPolicies(); // Refresh the policies after saving
+      fetchPolicies(); 
     } catch (error) {
       console.error("Error saving policy:", error);
       alert("Failed to save policy. Please try again.");
@@ -80,20 +73,25 @@ const AttendancePolicy = () => {
 
   const fetchPolicies = async () => {
     try {
+      setLoading(true);
+      // Backend now handles category filtering via query string
       const response = await axios.get(
-        `${import.meta.env.VITE_APP_BASE_URL}/company/getAllPolicies`
+        `${import.meta.env.VITE_APP_BASE_URL}/company/getAllPolicies?category=Attendance`
       );
-      const hrPolicy = response.data.data.find(
-        (policy) => policy.description.trim() === "attendance-policy"
-      );
-      if (hrPolicy) {
-        setPolicy(hrPolicy);
+      
+      // FIX: Access the first policy returned for this category
+      const attendancePolicy = response.data.data[0]; 
+
+      if (attendancePolicy) {
+        setPolicy(attendancePolicy);
+        setError(null);
       } else {
+        setPolicy(null);
         setError("Attendance Policy not found");
       }
-      setLoading(false);
     } catch (err) {
       setError("Error fetching policies");
+    } finally {
       setLoading(false);
     }
   };
@@ -106,77 +104,36 @@ const AttendancePolicy = () => {
     setShowForm(false);
   };
 
-  const handleDownload = async () => {
-    // const pdfUrl = "https://res.cloudinary.com/dalafofef/raw/upload/v1728030042/HMSFOLDER/ltrtzbqyc2ue2e7a9dck.pdf"; // Your embedded PDF link
-
-    try {
-      // Fetch the PDF
-      const response = await axios.get(pdfUrl, { responseType: "blob" });
-
-      // Check if the response is of type application/pdf
-      if (response.headers["content-type"] !== "application/pdf") {
-        alert("The downloaded file is not a PDF.");
-        return;
-      }
-
-      // Create a blob from the response data
-      const blob = new Blob([response.data], { type: "application/pdf" });
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = downloadUrl;
-      link.setAttribute("download", "attendance-policy.pdf"); // Specify the file name
-      document.body.appendChild(link);
-      link.click(); // Trigger the download
-      document.body.removeChild(link); // Clean up
-      window.URL.revokeObjectURL(downloadUrl); // Cleanup
-    } catch (error) {
-      console.error("Failed to download the PDF:", error);
-      alert(
-        "Failed to download the PDF. Please check the console for more details."
-      );
-    }
-  };
-
   return (
     <div className="p-4 md:p-6 lg:p-8">
       <div className="w-full mb-4 pb-4 border-b border-gray-300 flex flex-col md:flex-row items-center justify-between">
         <div>
           <h1 className="text-2xl font-medium">Attendance Policy</h1>
           <div className="flex text-sm w-fit text-gray-500 mt-1 gap-1">
-            <Link to="/" className="cursor-pointer hover:text-slate-800">
-              Home
-            </Link>
+            <Link to="/" className="cursor-pointer hover:text-slate-800">Home</Link>
             <span>|</span>
-            <Link
-              to="/app/companyProfile"
-              className="cursor-pointer hover:text-slate-800"
-            >
-              Company Profile
-            </Link>
+            <Link to="/app/companyProfile" className="cursor-pointer hover:text-slate-800">Company Profile</Link>
             <span>|</span>
-            <span className="cursor-default text-gray-500 hover:text-slate-800">
-              Attendance Policy
-            </span>
+            <span className="cursor-default text-gray-500">Attendance Policy</span>
           </div>
         </div>
         <div className="flex flex-col sm:flex-row justify-center sm:justify-end gap-4 py-4">
           <button
             onClick={policy ? handleEditClick : handleAddClick}
-            className="border-black  px-3 py-1 bg-blue-600 text-white rounded-full hover:bg-blue-700 sm:mr-4  max-sm:text-sm md:text-base  gap-2"
+            className="px-6 py-1 bg-blue-600 text-white rounded-full hover:bg-blue-700 max-sm:text-sm md:text-base"
           >
-            <span>{policy ? "Edit Policy" : "Add Policy"}</span>
+            {policy ? "Edit Policy" : "Add Policy"}
           </button>
         </div>
       </div>
+
       {showForm ? (
         <div className="bg-white rounded-lg shadow-lg p-4 md:p-6">
           <h2 className="text-lg md:text-xl font-medium mb-4">
             {isEditing ? "Edit Policy" : "Add Policy"}
           </h2>
           <div className="mb-4">
-            <label htmlFor="titleInput" className="block font-medium mb-1">
-              Title
-            </label>
+            <label htmlFor="titleInput" className="block font-medium mb-1">Title</label>
             <input
               id="titleInput"
               type="text"
@@ -187,27 +144,23 @@ const AttendancePolicy = () => {
             />
           </div>
           <div className="mb-4">
-            <label htmlFor="documentInput" className="block font-medium mb-1">
-              Document Upload
-            </label>
+            <label htmlFor="documentInput" className="block font-medium mb-1">Document Upload (PDF)</label>
             <input
               id="documentInput"
               type="file"
-              accept=".pdf,.doc,.docx"
+              accept="application/pdf"
               onChange={(e) => setDocument(e.target.files[0])}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
             />
           </div>
           <div className="flex justify-end gap-2">
             <button
-              type="button"
               onClick={handleCancelClick}
               className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 text-sm"
             >
               Cancel
             </button>
             <button
-              type="button"
               onClick={handleSaveClick}
               className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
             >
@@ -216,41 +169,35 @@ const AttendancePolicy = () => {
           </div>
         </div>
       ) : (
-        <div
-          className="mt-6 p-4 md:p-6 shadow-md rounded-lg"
-          style={{ minHeight: "450px" }}
-        >
+        <div className="mt-6 p-4 md:p-6 shadow-md rounded-lg" style={{ minHeight: "450px" }}>
           {loading ? (
-            <p className="text-sm md:text-base">Loading policy...</p>
+            <p>Loading policy...</p>
           ) : error ? (
-            <p className="text-sm md:text-base text-red-500">{error}</p>
+            <p className="text-red-500">{error}</p>
           ) : policy ? (
             <div className="bg-white shadow-lg rounded-lg p-6 max-w-md mx-auto h-60">
-              <h2 className="text-lg md:text-xl font-semibold">
-                Title: {policy.title}
-              </h2>
+              <h2 className="text-lg md:text-xl font-semibold">Title: {policy.title}</h2>
               {policy.document && (
                 <div className="mt-4">
                   <a
-                    href={policy.document} // Ensure this URL is correct
-                    target="_blank" // Opens the PDF in a new tab
-                    className="text-blue-500"
-                    download
+                    // FIX: Prepend Server URL to the relative local path (uploads/policies/...)
+                    href={`${IMG_URL}/${policy.document}`} 
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 font-medium underline"
                   >
-                    View PDF
+                    View Document (PDF)
                   </a>
-                  {/* <button onClick={handleDownload} className="text-blue-500">
-                    Download PDF
-                  </button> */}
                 </div>
               )}
             </div>
           ) : (
-            <p className="text-sm md:text-base">No policy available</p>
+            <p>No policy available</p>
           )}
         </div>
       )}
     </div>
   );
 };
+
 export default AttendancePolicy;

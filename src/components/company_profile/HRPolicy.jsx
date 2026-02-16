@@ -6,15 +6,14 @@ const HRPolicy = () => {
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
   const [document, setDocument] = useState(null);
   const [policy, setPolicy] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const IMG_URL = import.meta.env.VITE_APP_IMG_URL;
 
   const handleAddClick = () => {
     setTitle('');
-    setDescription('hr-policy');
     setDocument(null);
     setIsEditing(false);
     setShowForm(true);
@@ -29,19 +28,17 @@ const HRPolicy = () => {
     }
   };
 
-
-
-
   const handleSaveClick = async () => {
     const formData = new FormData();
     formData.append("title", title);
+    formData.append("category", "HR");
     const updatedDescription = description;
     formData.append("description", updatedDescription);
 
     if (document) {
       formData.append("document", document);
     }
-    console.log(formData , "fffffffffffffffff")
+
     try {
       if (isEditing && policy) {
         await axios.patch(
@@ -74,13 +71,17 @@ const HRPolicy = () => {
 
   const fetchPolicies = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_APP_BASE_URL}/company/getAllPolicies`);
-      const hrPolicy = response.data.data.find((policy) => policy.description.trim() === 'hr-policy');
+      // The category filter is already handled by the API query param
+      const response = await axios.get(`${import.meta.env.VITE_APP_BASE_URL}/company/getAllPolicies?category=HR`);
 
+      // FIX: Just take the first item from the filtered category results
+      const hrPolicy = response.data.data[0];
 
       if (hrPolicy) {
         setPolicy(hrPolicy);
+        setError(null); // Clear errors if found
       } else {
+        setPolicy(null);
         setError('HR Policy not found');
       }
       setLoading(false);
@@ -89,8 +90,6 @@ const HRPolicy = () => {
       setLoading(false);
     }
   };
-
-  console.log(policy , "policyggg")
 
   useEffect(() => {
     fetchPolicies();
@@ -187,10 +186,11 @@ const HRPolicy = () => {
               {policy.document && (
                 <div className="mt-4">
                   <a
-                    href={policy.document}
+                    // FIX: Prepend the Server URL to the relative document path
+                    href={`${IMG_URL}/${policy.document}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-500"
+                    className="text-blue-500 font-medium underline"
                   >
                     View Document
                   </a>

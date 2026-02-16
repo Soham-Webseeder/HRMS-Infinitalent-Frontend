@@ -6,15 +6,14 @@ const LateCome_EarlyGo_Policy = () => {
   const [showForm, setShowForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
   const [document, setDocument] = useState(null);
   const [policy, setPolicy] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const IMG_URL = import.meta.env.VITE_APP_IMG_URL;
 
   const handleAddClick = () => {
     setTitle('');
-    setDescription('');
     setDocument(null);
     setIsEditing(false);
     setShowForm(true);
@@ -23,7 +22,6 @@ const LateCome_EarlyGo_Policy = () => {
   const handleEditClick = () => {
     if (policy) {
       setTitle(policy.title);
-      setDescription(policy.description.replace(' lateCome-earlyGo-policy', ''));
       setIsEditing(true);
       setShowForm(true);
     }
@@ -32,6 +30,7 @@ const LateCome_EarlyGo_Policy = () => {
   const handleSaveClick = async () => {
     const formData = new FormData();
     formData.append("title", title);
+    formData.append("category", "LateCome");
     const updatedDescription = description;
     formData.append("description", updatedDescription);
     if (document) {
@@ -70,11 +69,17 @@ const LateCome_EarlyGo_Policy = () => {
 
   const fetchPolicies = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_APP_BASE_URL}/company/getAllPolicies`);
-      const hrPolicy = response.data.data.find((policy) => policy.description.trim() === 'lateCome-earlyGo-policy');
-      if (hrPolicy) {
-        setPolicy(hrPolicy);
+      // The API already filters by category via the query string
+      const response = await axios.get(`${import.meta.env.VITE_APP_BASE_URL}/company/getAllPolicies?category=LateCome`);
+
+      // FIX: Take the first result from the filtered category
+      const foundPolicy = response.data.data[0];
+
+      if (foundPolicy) {
+        setPolicy(foundPolicy);
+        setError(null);
       } else {
+        setPolicy(null);
         setError('LateCome EarlyGo Policy not found');
       }
       setLoading(false);
@@ -179,10 +184,11 @@ const LateCome_EarlyGo_Policy = () => {
               {policy.document && (
                 <div className="mt-4">
                   <a
-                    href={policy.document}
+                    // FIX: Prepend the Server URL to the relative document path
+                    href={`${IMG_URL}/${policy.document}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-500"
+                    className="text-blue-500 font-medium underline"
                   >
                     View Document
                   </a>
