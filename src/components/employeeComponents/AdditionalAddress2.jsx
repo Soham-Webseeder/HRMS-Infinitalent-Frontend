@@ -1,44 +1,24 @@
-import React, { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import React from "react";
+import { useDispatch } from "react-redux";
 import { increment, decrement } from "../../redux/slices/CounterSlice";
 
-export default function AdditionalAddress() {
+export default function AdditionalAddress({ formData, setFormData }) {
   const dispatch = useDispatch();
-  const currentForm = useSelector((state) => state.counter);
-
-  const [formData, setFormData] = useState({
-    homeEmail: "",
-    homePhone: "",
-    cellPhone: "",
-    businessEmail: "",
-    businessPhone: "",
-    emrContact: "",
-    emrContactName: "",
-    emrContactRelation: "",
-    alterEmrContact: "",
-    alterEmrContactName: "",
-    alterEmrRelation: "",
-  });
-
-  useEffect(() => {
-    const savedFormData = localStorage.getItem("formData");
-    if (savedFormData) {
-      setFormData(JSON.parse(savedFormData));
-    }
-  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    // Directly update the parent state passed as a prop
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    localStorage.setItem("formData", JSON.stringify(formData));
+    // Data is already in the parent state; proceed to the next form tab
     dispatch(increment());
   };
-
-  console.log(formData, "Additonal");
 
   return (
     <div className="bg-zinc-100">
@@ -52,7 +32,7 @@ export default function AdditionalAddress() {
               <input
                 type="text"
                 name="emrContact"
-                value={formData.emrContact}
+                value={formData?.emrContact || ""}
                 onChange={handleChange}
                 required
                 placeholder="Emergency Contact"
@@ -65,7 +45,7 @@ export default function AdditionalAddress() {
               <input
                 type="text"
                 name="emrContactName"
-                value={formData.emrContactName}
+                value={formData?.emrContactName || ""}
                 onChange={handleChange}
                 required
                 placeholder="Emergency Contact Name"
@@ -79,7 +59,7 @@ export default function AdditionalAddress() {
               <input
                 type="text"
                 name="emrContactRelation"
-                value={formData.emrContactRelation}
+                value={formData?.emrContactRelation || ""}
                 onChange={handleChange}
                 placeholder="Emergency Contact Relation"
                 className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
@@ -93,7 +73,7 @@ export default function AdditionalAddress() {
               <input
                 type="text"
                 name="alterEmrContact"
-                value={formData.alterEmrContact}
+                value={formData?.alterEmrContact || ""}
                 onChange={handleChange}
                 placeholder="Alternate Emergency Contact"
                 className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
@@ -105,7 +85,7 @@ export default function AdditionalAddress() {
               <input
                 type="text"
                 name="alterEmrContactName"
-                value={formData.alterEmrContactName}
+                value={formData?.alterEmrContactName || ""}
                 onChange={handleChange}
                 placeholder="Alternate Emergency Contact Name"
                 className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
@@ -117,7 +97,7 @@ export default function AdditionalAddress() {
               <input
                 type="text"
                 name="alterEmrRelation"
-                value={formData.alterEmrRelation}
+                value={formData?.alterEmrRelation || ""}
                 onChange={handleChange}
                 placeholder="Alternate Emergency Contact Relation"
                 className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"

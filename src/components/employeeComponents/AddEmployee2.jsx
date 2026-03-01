@@ -12,199 +12,68 @@ import { setModal } from "../../redux/slices/SidebarSlice";
 import BankDetails from "./BankDetails2";
 import SalarySetup2 from "./SalarySetup2";
 import { Link, useNavigate } from "react-router-dom";
-export default function AddEmployee2({ updateId, setUpdateId, type }) {
-  const [counter, setCounter] = useState();
+
+export default function AddEmployee2({ updateId, setUpdateId }) {
   const dispatch = useDispatch();
   const currentForm = useSelector((state) => state.counter);
 
   const [formData, setFormData] = useState(() => {
-    // Initialize state from localStorage or use comprehensive defaults
-    const savedFormData = localStorage.getItem("formData");
+    const saved = localStorage.getItem("formData");
     const defaultData = {
       // Basic Info
-      firstName: "",
-      middleName: "",
-      lastName: "",
-      maidenName: "",
-      email: "",
-      phone: "",
-      alternativePhone: "",
-      country: "",
-      city: "",
-      zipCode: "",
-      empId: 1,
-
-      // Positional Information
-      dutyType: "",
-      originalHireDate: "",
-      terminationReason: "",
-      rateType: "",
-      payFrequency: "",
-      salary: "",
-      position: "",
-      hireDate: "",
-      reHireDate: "",
-      rate: "",
-      payFrequencyText: "",
-      department: "",
-      designation: "",
-      businessUnit: "",
-      hourlyRate: "",
-      employmentStatus: "Active",
-      employeeType: "ICPL",
-      geofenceCenter: [],
-      geofenceRadius: 0,
-
-      // Benefits
-      benefits: [{
-        benefitType: "",
-        startDate: "",
-        benefitDescription: "",
-        endDate: "",
-      }],
-
-      // Biographical Info
-      dateOfBirth: "",
-      maritalStatus: "Single",
-      religion: "",
-      citizenship: "",
-      gender: "",
-      // Files (Base64 strings or URLs)
-      photograph: "",
-      resume: "",
-      aadharCard: "",
-      panCard: "",
-      SSC: "",
-      HSC: "",
-      documents: [{
-        docName: "",
-        docDocument: "",
-      }],
-
-      // Additional Address (Emergency Contact/Other Info)
-      homeEmail: "",
-      homePhone: "",
-      cellPhone: "",
-      businessEmail: "",
-      businessPhone: "",
-      emrContact: "",
-      emrContactName: "",
-      emrContactRelation: "",
-      alterEmrContact: "",
-      alterEmrContactName: "",
-      alterEmrRelation: "",
-
-      // Bank Details
-      bankName: "",
-      branchName: "",
-      accountNo: "",
-      acHolderName: "",
-      accountType: "Saving",
-      ifscCode: "",
-
-      // Login Info
-      password: "",
-      userEmail: "", // Can be same as email
+      firstName: "", middleName: "", lastName: "", email: "", phone: "", alternativePhone: "", country: "", city: "", zipCode: "",
+      // Work & Position
+      empId: "", designation: "", position: "", department: "", businessUnit: "", employmentStatus: "Active", employeeType: "ICPL", hireDate: "", originalHireDate: "",
+      // Financials
+      salary: "", bankName: "", branchName: "", accountNo: "", acHolderName: "", accountType: "Saving", ifscCode: "",
+      // Compliance & Docs
+      aadharCard: "", panCard: "", uanNo: "", esicNo: "", photograph: "", resume: "", SSC: "", HSC: "",
+      documents: [{ docName: "", docDocument: "" }],
+      // Biographical
+      dateOfBirth: "", gender: "", maritalStatus: "Single", religion: "", citizenship: "",
+      // Address & Emergency
+      homeEmail: "", homePhone: "", cellPhone: "", businessEmail: "", businessPhone: "",
+      emrContact: "", emrContactName: "", emrContactRelation: "",
+      alterEmrContact: "", alterEmrContactName: "", alterEmrRelation: "",
+      // Auth & System
+      password: "", userEmail: "", isTrackingEnabled: true, geofenceCenter: [], geofenceRadius: 0, active: true
     };
-    // Merge saved data with defaults to ensure all fields are present
-    const parsedData = savedFormData ? JSON.parse(savedFormData) : {};
-    return {
-      ...defaultData,
-      ...parsedData,
-      benefits: parsedData.benefits || defaultData.benefits,
-      documents: parsedData.documents || defaultData.documents,
-    };
+    return saved ? { ...defaultData, ...JSON.parse(saved) } : defaultData;
   });
 
   const [emailError, setEmailError] = useState("");
-  const navigate = useNavigate()
+
+  useEffect(() => {
+    localStorage.setItem("formData", JSON.stringify(formData));
+  }, [formData]);
+
+  useEffect(() => {
+    if (updateId) {
+      const getUserData = async () => {
+        const response = await axios.get(`${import.meta.env.VITE_APP_BASE_URL}/employee/getEmployeeById/${updateId}`);
+        setFormData(response.data.data);
+      };
+      getUserData();
+    }
+  }, [updateId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-  };
-
-  const checkEmailExists = async (email) => {
-    try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_APP_BASE_URL}/employee/checkEmail?email=${email}`
-      );
-      return response.data.data?.exist;
-    } catch (error) {
-      console.error("Error checking email:", error);
-      return false;
-    }
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setEmailError("");
-
-    const emailExists = await checkEmailExists(formData.email);
-    if (emailExists) {
-      setEmailError("This email already exists.");
-      return; // Stop submission if the email exists
-    }
-    console.log(formData, "formData");
-    localStorage.setItem("formData", JSON.stringify(formData));
-    if (formData) {
-      dispatch(increment());
-    }
-  };
-
-  useEffect(() => {
-    const savedFormData = localStorage.getItem("formData");
-    if (savedFormData) {
-      console.log(JSON.parse(savedFormData));
-    }
-
-    const getData = async () => {
-      const response = await axios.get(
-        `${import.meta.env.VITE_APP_BASE_URL}/employee/getAllEmployees`
-      );
-      console.log(response.data.data, "emp");
-
-      setCounter(response.data.data.length + 1);
-      console.log("length", counter);
-      setFormData((prev) => ({
-        ...prev,
-        empId: counter,
-      }));
-    };
-    getData();
-  }, []);
-
-  useEffect(() => {
-    // If we are NOT in update mode, clear the stale cache
-    if (!updateId) {
-      localStorage.removeItem("formData");
-      // Optionally reset state to defaults if needed
-    }
-
-    const getData = async () => {
-      try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_APP_BASE_URL}/employee/getAllEmployees`
-        );
-        const nextEmpId = response.data.data.length + 1;
-        setCounter(nextEmpId);
-
-        // Update formData with the new ID only for new creations
-        if (!updateId) {
-          setFormData((prev) => ({
-            ...prev,
-            empId: nextEmpId,
-          }));
-        }
-      } catch (error) {
-        console.error("Error fetching employees:", error);
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_APP_BASE_URL}/employee/checkEmail?email=${formData.email}`);
+      if (res.data.data?.exist && !updateId) {
+        setEmailError("This email already exists.");
+      } else {
+        dispatch(increment());
       }
-    };
-    getData();
-  }, [updateId]); // Add updateId as a dependency
+    } catch (err) { console.error(err); }
+  };
 
   useEffect(() => {
     const getUserData = async () => {
@@ -217,7 +86,7 @@ export default function AddEmployee2({ updateId, setUpdateId, type }) {
       setFormData(response.data.data);
     };
     getUserData();
-  }, []);
+  }, [updateId]);
 
   const renderForm = () => {
     switch (currentForm) {
@@ -415,21 +284,21 @@ export default function AddEmployee2({ updateId, setUpdateId, type }) {
           <hr className="my-4 " />
         </div>
         {!updateId && (
-            <button
-              onClick={() => {
-                localStorage.removeItem("formData");
-                window.location.reload(); // Hard refresh to clear state in all child components
-              }}
-              className="bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-2 px-4 rounded-full transition-colors"
-            >
-              CLEAR STALE DATA
-            </button>
-          )}
+          <button
+            onClick={() => {
+              localStorage.removeItem("formData");
+              window.location.reload(); // Hard refresh to clear state in all child components
+            }}
+            className="bg-red-500 hover:bg-red-600 text-white text-xs font-bold py-2 px-4 rounded-full transition-colors"
+          >
+            CLEAR STALE DATA
+          </button>
+        )}
         <div className="bg-gray-100 border-gray-200 border rounded-md ">
           <div className="flex space-x-4 pb-4 justify-between items-center">
             {updateId && (
               <button onClick={() => dispatch(setModal(false))}>
-                <RxCross1 size={25} />
+                <RxCross1 size={20} />
               </button>
             )}
           </div>

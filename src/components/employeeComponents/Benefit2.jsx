@@ -1,20 +1,19 @@
-import React, { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import React from "react";
+import { useDispatch } from "react-redux";
 import { increment, decrement } from "../../redux/slices/CounterSlice";
 
-export default function Benefit() {
+export default function Benefit({ formData, setFormData }) {
   const dispatch = useDispatch();
-  const currentForm = useSelector((state) => state.counter);
-
-  // Initialize state as an array with one object
-  const [formFields, setFormFields] = useState([
+  
+  // Use the benefits array from the parent formData
+  const formFields = formData.benefits || [
     {
       benefitType: "",
       startDate: "",
       benefitDescription: "",
       endDate: "",
     },
-  ]);
+  ];
 
   // Handle input change for dynamic fields
   const handleInputChange = (index, e) => {
@@ -24,11 +23,16 @@ export default function Benefit() {
       ...newFields[index],
       [name]: value,
     };
-    setFormFields(newFields);
+    
+    // Update the parent state directly
+    setFormData((prev) => ({
+      ...prev,
+      benefits: newFields,
+    }));
   };
 
   const handleAddField = () => {
-    setFormFields([
+    const newFields = [
       ...formFields,
       {
         benefitType: "",
@@ -36,46 +40,28 @@ export default function Benefit() {
         benefitDescription: "",
         endDate: "",
       },
-    ]);
+    ];
+    
+    setFormData((prev) => ({
+      ...prev,
+      benefits: newFields,
+    }));
   };
 
   const handleRemoveField = (index) => {
     const newFields = formFields.filter((_, i) => i !== index);
-    setFormFields(newFields);
+    
+    setFormData((prev) => ({
+      ...prev,
+      benefits: newFields,
+    }));
   };
 
-  useEffect(() => {
-    const savedFormData = localStorage.getItem("formData");
-    if (savedFormData) {
-      try {
-        const parsedData = JSON.parse(savedFormData);
-        // Ensure the parsed data is an array
-        if (Array.isArray(parsedData)) {
-          setFormFields(parsedData);
-        }
-      } catch (error) {
-        console.error("Failed to parse form data from localStorage", error);
-      }
-    }
-  }, []);
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-
-    const savedFormData = localStorage.getItem("formData");
-    let formData = savedFormData ? JSON.parse(savedFormData) : {};
-
-    formData = {
-      ...formData, // Spread the existing form data
-      benefits: formFields, // Add the benefits array
-    };
-
-    localStorage.setItem("formData", JSON.stringify(formData));
-
+    // Data is already managed in the parent state; proceed to the next tab
     dispatch(increment());
   };
-
-  console.log(formFields, "formFields");
 
   return (
     <div className="bg-zinc-100">
@@ -99,7 +85,7 @@ export default function Benefit() {
                       type="text"
                       id={`benefitType-${index}`}
                       name="benefitType"
-                      value={field.benefitType}
+                      value={field.benefitType || ""}
                       onChange={(e) => handleInputChange(index, e)}
                       placeholder="Benefit Class Code"
                       className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
@@ -115,9 +101,8 @@ export default function Benefit() {
                       type="date"
                       id={`startDate-${index}`}
                       name="startDate"
-                      value={field.startDate}
+                      value={field.startDate || ""}
                       onChange={(e) => handleInputChange(index, e)}
-                      placeholder="Benefit Accrual Date"
                       className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     />
                   </div>
@@ -132,7 +117,7 @@ export default function Benefit() {
                       type="text"
                       id={`benefitDescription-${index}`}
                       name="benefitDescription"
-                      value={field.benefitDescription}
+                      value={field.benefitDescription || ""}
                       onChange={(e) => handleInputChange(index, e)}
                       placeholder="Benefit Description"
                       className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
@@ -148,7 +133,7 @@ export default function Benefit() {
                       type="date"
                       id={`endDate-${index}`}
                       name="endDate"
-                      value={field.endDate}
+                      value={field.endDate || ""}
                       onChange={(e) => handleInputChange(index, e)}
                       className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     />
@@ -177,14 +162,16 @@ export default function Benefit() {
         </button>
         <div className="flex justify-between mt-8">
           <button
+            type="button"
             onClick={() => dispatch(decrement())}
-            className="border-black mb-4 border px-5 py-1 bg-blue-600  text-white rounded-full hover:bg-blue-700 mr-8 sm:text-xs text-xs md:text-base flex items-center justify-end gap-2"
+            className="border-black mb-4 border px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
           >
             Previous
           </button>
           <button
+            type="submit"
             onClick={handleSubmit}
-            className="border-black mb-4 border px-5 py-1 bg-blue-600  text-white rounded-full hover:bg-blue-700 mr-8 sm:text-xs text-xs md:text-base flex items-center justify-end gap-2"
+            className="border-black mb-4 border px-8 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
           >
             NEXT
           </button>

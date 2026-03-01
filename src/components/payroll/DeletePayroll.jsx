@@ -87,28 +87,26 @@ export default function DeletePayroll() {
         }
       );
 
-      console.log(selectedBusinessUnits, selectedDepartments);
+      // FIX: The backend returns "data", not "employees"
+      const rawEmployees = response.data.data || [];
 
-      if (response.data && response.data.employees) {
-        console.log(response.data.employees)
-        let filteredEmps = response.data.employees.filter(emp => {
+      if (rawEmployees.length > 0) {
+        let filteredEmps = rawEmployees.filter(emp => {
           if (selectedFilterType === 'businessUnits') {
+            // Note: Ensure businessUnit is actually returned by the API
             return (emp?.businessUnit && selectedBusinessUnits?.includes(emp.businessUnit));
           } else if (selectedFilterType === 'departments') {
-            return (emp?.department && selectedDepartments.includes(emp.company));
-          } else {
-            return true;
+            // Changed emp.company to emp.department to match your logic
+            return (emp?.department && selectedDepartments.includes(emp.department));
           }
+          return true;
         }).map(emp => ({
           ...emp,
-          _id: emp._id || emp.id || emp.employeeId || null,
-          department: emp.department || null,
-          businessUnit: emp.businessUnit || null
+          // Standardize the ID field
+          _id: emp._id || emp.id || emp.empId
         }));
 
-        console.log("Filtered Employees:", filteredEmps);
-
-        setEmployees(response.data.employees);
+        setEmployees(rawEmployees);
         setFilteredEmployees(filteredEmps);
       } else {
         setEmployees([]);
@@ -116,7 +114,6 @@ export default function DeletePayroll() {
       }
     } catch (error) {
       console.error("Error fetching employees:", error);
-      console.error("Full error details:", error.response?.data || error.message);
       alert(`Failed to fetch employees: ${error.message}`);
       setEmployees([]);
       setFilteredEmployees([]);

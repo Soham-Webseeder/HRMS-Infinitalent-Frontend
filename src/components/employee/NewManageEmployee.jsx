@@ -204,7 +204,7 @@ export default function NewManageEmployee() {
   return (
     <>
       {editEmployeeModal ? (
-        <AddEmployee
+        <AddEmployee2
           type={"update"}
           updateId={updateId}
           setUpdateId={setUpdateId}
