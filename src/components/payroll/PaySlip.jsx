@@ -293,7 +293,7 @@ export default function PaySlip() {
     setIsopenViewPaySlip(false);
   };
 
-  const financialYears = generateFinancialYears(currentFiscalStart, 2);
+  const financialYears = generateFinancialYears(currentFiscalStart, 3);
 
   const [isDropdownOpenCalander, setDropdownOpenCalander] = useState(false);
   const [selectedFinancialYear, setSelectedFinancialYear] = useState(financialYears[0]);
