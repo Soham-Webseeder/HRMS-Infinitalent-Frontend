@@ -45,7 +45,7 @@ export default function PaySlip() {
     const currentYear = now.getFullYear();
     return currentMonth < 3 ? currentYear - 1 : currentYear;
   };
-  const currentFiscalStart = getActiveFiscalYear();
+  const currentFiscalStart = getActiveFiscalYear() - 1;
   const [financialStartYear, setFinancialStartYear] = useState(currentFiscalStart);
   const [currentMonth, setCurrentMonth] = useState(() => {
     const currentDate = new Date();
@@ -296,7 +296,7 @@ export default function PaySlip() {
   const financialYears = generateFinancialYears(currentFiscalStart, 3);
 
   const [isDropdownOpenCalander, setDropdownOpenCalander] = useState(false);
-  const [selectedFinancialYear, setSelectedFinancialYear] = useState(financialYears[0]);
+  const [selectedFinancialYear, setSelectedFinancialYear] = useState(financialYears[1]);
 
   const handleDropdownToggle = () => {
     setDropdownOpenCalander(!isDropdownOpenCalander);
