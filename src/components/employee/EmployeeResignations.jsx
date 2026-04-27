@@ -153,7 +153,7 @@ const EmployeeResignations = () => {
                       <td className="px-2 py-2">
                         {request.image ? (
                           <a
-                            href={request.image}
+                            href={`${import.meta.env.VITE_APP_IMG_URL}/${request.image}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-500 hover:underline"
@@ -244,7 +244,7 @@ const EmployeeResignations = () => {
                 <b>Resignation Letter:</b>{" "}
                 {selectedRequest.image ? (
                   <a
-                    href={selectedRequest.image}
+                    href={`${import.meta.env.VITE_APP_IMG_URL}/${selectedRequest.image}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-500 hover:underline"
