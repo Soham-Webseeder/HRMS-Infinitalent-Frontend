@@ -7,9 +7,16 @@ import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import "react-toastify/dist/ReactToastify.css";
 import { IoMdArrowDropdown } from "react-icons/io";
-import { Designation } from "./Designation";
+import { IoSearch } from "react-icons/io5";
+import { NavLink } from "react-router-dom";
+import {
+  MdKeyboardArrowRight,
+  MdKeyboardArrowLeft,
+  MdKeyboardDoubleArrowRight,
+  MdKeyboardDoubleArrowLeft,
+} from "react-icons/md";
 
-export const Department = () => {
+export default function Department() {
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [department, setDepartment] = useState([]);
@@ -17,7 +24,7 @@ export const Department = () => {
   const [departmentName, setDepartmentName] = useState("");
   const [editDepartmentId, setEditDepartmentId] = useState("");
   const [editDepartmentName, setEditDepartmentName] = useState("");
-  
+  const [companyId, setCompanyId] = useState(localStorage.getItem("companyId"));
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [perPage, setPerPage] = useState(5);
@@ -36,16 +43,15 @@ export const Department = () => {
     };
   }, []);
 
-
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(
         `${import.meta.env.VITE_APP_BASE_URL}/company/getAllDepartment`,
         {
           params: {
-            page: {currentPage},
-            limit: {perPage},
-            name:searchTerm
+            page: { currentPage },
+            limit: { perPage },
+            name: searchTerm,
           },
         }
       );
@@ -54,7 +60,10 @@ export const Department = () => {
         const departmentsArray = response.data.response;
         const allDepartments = departmentsArray?.map((departmentObj) => ({
           id: departmentObj._id,
-          department: departmentObj.department.title, // Access title here
+          department: departmentObj.department.title,
+          employeeCount: departmentObj.employeeCount,
+
+          // Access title here
         }));
 
         // setDepartment(allDepartments);
@@ -74,7 +83,6 @@ export const Department = () => {
     }
   };
 
-
   useEffect(() => {
     fetchDepartments();
   }, [perPage]);
@@ -83,8 +91,6 @@ export const Department = () => {
     setCurrentPage(1);
     fetchDepartments();
   }, [searchTerm, department]);
-
- 
 
   const toggleModal = () => {
     setShowModal(!showModal);
@@ -173,11 +179,22 @@ export const Department = () => {
     }
   };
 
-  
+  const handlePreviousPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  };
 
   const handlePerPageChange = (e) => {
+    setPerPage(parseInt(e.target.value, 10));
     setCurrentPage(1);
-    setPerPage(parseInt(e.target.value),10);
+  };
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
   };
 
   // Paginate filtered departments
@@ -187,31 +204,64 @@ export const Department = () => {
   );
 
   return (
-    <div className="w-full sm:w-full flex items-center justify-center mt-3 pt-1 flex-col">
-        <div className="p-1  w-full ">
-        <h1 className="text-2xl border rounded-full  p-1 text-center font-bold shadow-md ">Department</h1>
-        </div>
+    <div className=" w-full  min-h-screen sm:px-4  overflow-x-hidden flex flex-col relative items-center pt-1">
       <div>
         <Toaster />
       </div>
-      <div className="flex flex-col w-full 2xl:w-[80%] px-3 h-auto justify-evenly rounded-full bg-white ">
-        <div className="flex flex-row justify-between items-center py-3 bg-white rounded-t-sm">
-          <h1 className="text-sm font-semibold text-red-500 px-1"> </h1>
+      <div className="bg-white  p-2  w-full ">
+        <h1 className=" text-2xl font-semibold mt-1">Department</h1>
+
+        <div className="flex justify-between items-center ">
+          <div className="flex text-sm w-fit text-gray-500 mt-1 gap-1">
+            <NavLink to="/" className="cursor-pointer hover:text-slate-800">
+              Home
+            </NavLink>
+            <span>|</span>
+            <NavLink
+              to="/app/companyProfile"
+              className="cursor-pointer hover:text-slate-800"
+            >
+              Company Profile
+            </NavLink>
+            <span>|</span>
+            <span className="cursor-default hover:text-slate-800">
+              Department
+            </span>
+          </div>
+
           <button
             onClick={toggleModal}
-            className="border-black border px-5 py-1 bg-blue-600 text-white rounded-full hover:bg-blue-700 mr-8 sm:text-xs text-xs md:text-base flex items-center justify-center gap-2"
+            className="border-black  px-3 py-1 bg-blue-600 text-white rounded-full hover:bg-blue-700 sm:mr-4  max-sm:text-sm md:text-base  gap-2"
           >
             Add New
           </button>
         </div>
-        <div className="border rounded px-4 py-4">
-          <div className="flex space-x-2 justify-between">
-            <div className="relative">
-              <label className="mr-2 text-sm">Show:</label>
+
+        <hr className="my-4  border-gray-300" />
+
+        <div className="flex  flex-col  justify-between border p-4 bg-gray-100 space-y-3  rounded-md ">
+          <div className="flex space-x-2 justify-between items-center">
+            <div className="flex border  hover:ring-2  border-gray-300 rounded-full bg-white items-center pr-2 hover:ring-blue-500">
+              <input
+                type="text"
+                placeholder="Search By Name"
+                value={searchTerm}
+                className="px-4 max-xs:w-[9rem] text-sm  py-1 sm:py-1.5 rounded-full outline-none"
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+
+              <IoSearch
+                size={30}
+                className="cursor-pointer hover:bg-gray-100 active:bg-gray-200 rounded-full p-1 text-gray-500"
+              />
+            </div>
+
+            <div className="relative text-sm">
+              <label className="mr-2 ">Per Page</label>
               <select
                 onChange={handlePerPageChange}
                 value={perPage}
-                className="border rounded-full py-1 px-2 text-sm"
+                className="ring-1 focus:ring-2 ring-gray-300 rounded-full py-1 font-semibold px-2 text-sm outline-none focus:ring-blue-500 cursor-pointer "
               >
                 {[5, 10, 15, 20].map((size) => (
                   <option key={size} value={size}>
@@ -220,176 +270,239 @@ export const Department = () => {
                 ))}
               </select>
             </div>
-            <div className="flex">
-              <span className="self-center font-bold mr-2">Search:</span>
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="px-4 py-1 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
           </div>
-        </div>
-        <div className="overflow-x-auto w-full">
-          {filteredDepartments.length > 0 ? (
-            <table className="min-w-full divide-y divide-gray-200 border-collapse border border-slate-400">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-sm font-medium text-gray-500 uppercase tracking-wider border border-slate-300  text-left w-[6%]"
-                  >
-                    SNo
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-left text-sm font-medium text-gray-500 uppercase tracking-wider border border-slate-300"
-                  >
-                    Department Name
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-4 py-3 text-sm font-medium text-gray-500 uppercase tracking-wider border border-slate-300 text-left  w-[10%]"
-                  >
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {paginatedDepartments.map((dept, index) => (
-                  <tr key={dept.id}>
-                    <td className="px-4 py-4 whitespace-nowrap border border-slate-300">
-                      {currentPage === 1?index+1:(currentPage-1)*perPage+index+1}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap border border-slate-300">
-                      {dept.department}
-                    </td>
-                    <td className="whitespace-nowrap text-left text-sm font-medium flex p-1">
-                      <div className="w-[50%] border-slate-300 py-3 text-center">
-                        <button
+
+          <div className="overflow-x-auto w-full">
+            {filteredDepartments.length > 0 ? (
+              <table className=" border-separate border-spacing-y-3 w-full">
+                <thead>
+                  <tr>
+                    <th className=" text-left py-2  font-medium  whitespace-nowrap border-b border-gray-300">
+                      Department Name
+                    </th>
+                    <th
+                      scope="col"
+                      className="  text-left py-2  font-medium  whitespace-nowrap border-b border-gray-300"
+                    >
+                      Employees
+                    </th>
+                    <th
+                      scope="col"
+                      className="w-16  text-left py-2  font-medium  whitespace-nowrap border-b border-gray-300"
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {paginatedDepartments.map((dept, index) => (
+                    <tr
+                      key={dept.id}
+                      className="text-gray-600 text-left w-full rounded-xl border border-black  "
+                    >
+                      <td
+                        className="pl-2 whitespace-nowrap    bg-white border-y border-l  "
+                        rowSpan={1}
+                      >
+                        {dept.department}
+                      </td>
+
+                      <td
+                        className="  whitespace-nowrap  bg-white border-y"
+                        rowSpan={1}
+                      >
+                        {dept.employeeCount}
+                      </td>
+
+                      <td
+                        className="w-16 whitespace-nowrap  flex  items-center gap-3  bg-white border-y border-r py-3 "
+                        rowSpan={1}
+                      >
+                        <FaEdit
+                          size={18}
                           onClick={() =>
                             toggleEditModal(dept.id, dept.department)
                           }
-                          className="text-indigo-500 hover:text-indigo-900 mr-2"
-                        >
-                          <FaEdit size={20} />
-                        </button>
-                      </div>
-                      <div className="w-[50%] border-l  py-3 text-center">
-                        <button
-                          onClick={() => handleDelete(dept.id)}
-                          className="text-red-500 hover:text-red-900"
-                        >
-                          <MdDelete size={20} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : companyId ? (
-            <div className="px-6 py-4 text-sm text-gray-500">
-              No department yet. Please add a department.
-            </div>
-          ) : (
-            <span className="loader"></span>
-          )}
-        </div>
-        {filteredDepartments.length > 0 && (
-          <div className="flex justify-end mt-2 space-x-2 p-3">
-            <button
-              onClick={() => setCurrentPage(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="px-4 py-2 border border-gray-300 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              Previous
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-4 py-2 ${
-                  currentPage === page
-                    ? "bg-blue-600 text-white rounded-full"
-                    : "border border-gray-300 rounded-full hover:bg-gray-100"
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-            <button
-              onClick={() => setCurrentPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="px-4 py-2 border border-gray-300 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              Next
-            </button>
-          </div>
-        )}
-      </div>
+                          className="text-gray-500 hover:text-gray-900 active:text-gray-500 cursor-pointer"
+                        />
 
-      {showModal && (
-        <div className="fixed z-10 inset-0 overflow-y-auto flex items-center justify-center sm:w-full ">
-          <div className="fixed inset-0 transition-opacity" aria-hidden="true">
-            <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+                        <MdDelete
+                          size={18}
+                          onClick={() => handleDelete(dept.id)}
+                          className="text-gray-500 hover:text-gray-900 active:text-gray-500 cursor-pointer"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : companyId ? (
+              <div className="px-6 py-4 text-sm text-gray-500">
+                No department yet. Please add a department.
+              </div>
+            ) : (
+              <span className="loader"></span>
+            )}
           </div>
-          <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all w-full md:max-w-lg sm:max-w-3xl sm:w-full mx-4">
-            <div className="p-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl leading-6 font-medium text-gray-900">
-                  Department Form
-                </h3>
-                <button
-                  onClick={toggleModal}
-                  className="text-gray-500 hover:text-gray-600"
-                >
-                  <RxCross2 />
-                </button>
+
+          {filteredDepartments.length > 0 && (
+            <div className="flex justify-center mt-4 space-x-2">
+              <button
+                onClick={() => handlePreviousPage(1)}
+                disabled={currentPage === 1}
+                className="px-4 py-2 bg-blue-800 text-white border border-gray-300 rounded-full"
+              >
+                &laquo;
+              </button>
+              <button
+                onClick={() => handlePreviousPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-4 py-2 bg-blue-800 text-white border border-gray-300 rounded-full"
+              >
+                &lt;
+              </button>
+              {totalPages <= 3 ? (
+                Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <button
+                      key={page}
+                      onClick={() => handleNextPage(page)}
+                      className={`px-4 py-2 border rounded-full ${
+                        currentPage === page
+                          ? "text-blue-500 bg-white border-blue-500"
+                          : "text-gray-700 border-gray-300 hover:bg-gray-100"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  )
+                )
+              ) : (
+                <>
+                  {currentPage > 2 && (
+                    <>
+                      <button
+                        onClick={() => handleNextPage(1)}
+                        className="px-4 py-2 border rounded-full text-gray-700 border-gray-300 hover:bg-gray-100"
+                      >
+                        1
+                      </button>
+                      {currentPage > 3 && <span className="px-2">...</span>}
+                    </>
+                  )}
+                  {Array.from(
+                    { length: 3 },
+                    (_, i) => i + Math.max(1, currentPage - 1)
+                  ).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => handleNextPage(page)}
+                      className={`px-4 py-2 border rounded-full ${
+                        currentPage === page
+                          ? "text-blue-500 bg-white border-blue-500"
+                          : "text-gray-700 border-gray-300 hover:bg-gray-100"
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  {currentPage < totalPages - 1 && (
+                    <>
+                      {currentPage < totalPages - 2 && (
+                        <span className="px-2">...</span>
+                      )}
+                      <button
+                        onClick={() => handleNextPage(totalPages)}
+                        className="px-4 py-2 border rounded-full text-gray-700 border-gray-300 hover:bg-gray-100"
+                      >
+                        {totalPages}
+                      </button>
+                    </>
+                  )}
+                </>
+              )}
+              <button
+                onClick={() => handleNextPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 bg-blue-800 text-white border border-gray-300 rounded-full"
+              >
+                &gt;
+              </button>
+              <button
+                onClick={() => handleNextPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 bg-blue-800 text-white border border-gray-300 rounded-full"
+              >
+                &raquo;
+              </button>
+            </div>
+          )}
+
+          {showModal && (
+            <div className="fixed z-10 inset-0 overflow-y-auto flex items-center justify-center sm:w-full ">
+              <div
+                className="fixed inset-0 transition-opacity"
+                aria-hidden="true"
+              >
+                <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+              </div>
+              <div className="bg-white rounded-lg overflow-hidden shadow-xl transform transition-all w-full md:max-w-lg sm:max-w-3xl sm:w-full mx-4">
+                <div className="p-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl leading-6 font-medium text-gray-900">
+                      Department Form
+                    </h3>
+                    <button
+                      onClick={toggleModal}
+                      className="text-gray-500 hover:text-gray-600"
+                    >
+                      <RxCross2 />
+                    </button>
+                  </div>
+                </div>
+                <div className="px-4 py-6 ">
+                  <form onSubmit={handleDepartmentSubmit} className="space-y-4">
+                    <div className="flex flex-col gap-3">
+                      <label
+                        htmlFor="departmentName"
+                        className="block text-md font-medium text-gray-700"
+                      >
+                        Department Name
+                      </label>
+                      <input
+                        type="text"
+                        name="departmentName"
+                        placeholder="Enter department name"
+                        id="departmentName"
+                        value={departmentName}
+                        required
+                        onChange={(e) => setDepartmentName(e.target.value)}
+                        className="mt-1  focus:ring-blue-500 p-2 focus:border-blue-500 block w-full shadow-md border border-gray-200 sm:text-sm  rounded-full"
+                      />
+                    </div>
+                    <div className="flex justify-end gap-3 ">
+                      <button
+                        type="submit"
+                        className="bg-blue-500 py-2 px-4 rounded-full shadow-md text-white hover:bg-blue-700"
+                      >
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        onClick={toggleModal}
+                        className="bg-gray-500 p-2 rounded-full shadow-md text-white hover:bg-gray-700"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </div>
             </div>
-            <div className="px-4 py-6 ">
-              <form onSubmit={handleDepartmentSubmit} className="space-y-4">
-                <div className="flex flex-col gap-3">
-                  <label
-                    htmlFor="departmentName"
-                    className="block text-md font-medium text-gray-700"
-                  >
-                    Department Name
-                  </label>
-                  <input
-                    type="text"
-                    name="departmentName"
-                    placeholder="Enter department name"
-                    id="departmentName"
-                    value={departmentName}
-                    required
-                    onChange={(e) => setDepartmentName(e.target.value)}
-                    className="mt-1  focus:ring-blue-500 p-2 focus:border-blue-500 block w-full shadow-md border border-gray-200 sm:text-sm  rounded-full"
-                  />
-                </div>
-                <div className="flex justify-end gap-3 ">
-                  <button
-                    type="submit"
-                    className="bg-blue-500 py-2 px-4 rounded-full shadow-md text-white hover:bg-blue-700"
-                  >
-                    Save
-                  </button>
-                  <button
-                    type="button"
-                    onClick={toggleModal}
-                    className="bg-gray-500 p-2 rounded-full shadow-md text-white hover:bg-gray-700"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
+          )}
         </div>
-      )}
+      </div>
 
       {showEditModal && (
         <div className="fixed z-10 inset-0 overflow-y-auto flex items-center justify-center ">
@@ -449,8 +562,6 @@ export const Department = () => {
           </div>
         </div>
       )}
-
-      <Designation />
     </div>
   );
-};
+}

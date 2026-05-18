@@ -1,15 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Category } from "../components/Category";
-import { Navbar2 } from "../components/Navbar2";
-import { Notifications } from "../components/Notifications";
 
 import { Navbar } from "../components/Navbar";
-import {SidebarUpdated}  from "../components/SidebarUpdated";
+import { Sidebar }  from "../components/Sidebar";
 import { useDispatch, useSelector } from "react-redux";
 import { setEmployeeDetails } from "../redux/slices/EmployeeSlice";
 import { jwtDecode } from "jwt-decode";
 import Dashboard from "../components/Dashboard";
-import { Sidebar } from "../components/Sidebar";
 
 export const Home = () => {
   const user = useSelector((state) => state.user);
@@ -32,7 +29,7 @@ export const Home = () => {
   return (
     <div className={`flex w-full h-full  `}>
       <div className={` ${sidebar ? "max-md:hidden" : ""}`}>
-      <SidebarUpdated />
+      <Sidebar />
       </div>
 
       <div
@@ -41,9 +38,6 @@ export const Home = () => {
         } `}
       >
         <Navbar />
-        {/* <Navbar2 />
-        <Notifications />
-        <Category />  */}
         <Dashboard />
       </div>
     </div>

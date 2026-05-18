@@ -12,9 +12,14 @@ const LOP = () => {
   const [lopData, setLopData] = useState([]);
   const [months, setMonths] = useState([]);
   const [searchQuery, setSearchQuery] = useState(""); // State to handle search input
-  const [businessUnits,setBusinessUnits] = useState([]);
-  const [selectedBusinessUnit,setSelectedBusinessUnit] = useState("All");
+  const [businessUnits, setBusinessUnits] = useState([]);
+  const [selectedBusinessUnit, setSelectedBusinessUnit] = useState("All");
   const [salaryCycle, setSalaryCycle] = useState(`${lastYear}-${lastMonth}`);
+
+  const token = localStorage.getItem("token");
+  const userBU = localStorage.getItem("businessUnit");
+  const SUPER_BU_ID = "697f38fac6874300915ca642";
+  const isSuperAdmin = userBU === SUPER_BU_ID;
 
   const navigate = useNavigate()
 
@@ -25,11 +30,12 @@ const LOP = () => {
         const response = await axios.get(
           `${import.meta.env.VITE_APP_BASE_URL}/salary/getAllLOPByMonthAndBusinessUnit`,
           {
-            params:{
-              businessUnit:selectedBusinessUnit,
-              month:salaryCycle.split("-")[1],
-              year:salaryCycle.split("-")[0]
-            }
+            params: {
+              businessUnit: selectedBusinessUnit,
+              month: salaryCycle.split("-")[1],
+              year: salaryCycle.split("-")[0]
+            },
+            headers: { Authorization: `Bearer ${token}` }
           }
         );
 
@@ -48,37 +54,48 @@ const LOP = () => {
     };
 
     fetchLopData();
-  }, [selectedBusinessUnit,salaryCycle]);
+  }, [selectedBusinessUnit, salaryCycle]);
 
 
   useEffect(() => {
     const fetchBusinessUnits = async () => {
       try {
         const businessUnitResponse = await axios.get(
-          `${import.meta.env.VITE_APP_BASE_URL}/company/get-bussinessUnits`
+          `${import.meta.env.VITE_APP_BASE_URL}/company/get-bussinessUnits`,
+          { headers: { Authorization: `Bearer ${token}` } } // <-- Attach Token
         );
 
         if (businessUnitResponse.data) {
-          setBusinessUnits(businessUnitResponse.data.response || []);
+          const fetchedBUs = businessUnitResponse.data.response || [];
+
+          // UI Restriction Logic
+          if (isSuperAdmin) {
+            setBusinessUnits(fetchedBUs);
+            setSelectedBusinessUnit("All");
+          } else {
+            // Find the HR's specific BU from the list
+            const myBU = fetchedBUs.find(bu => bu._id === userBU);
+            setBusinessUnits(myBU ? [myBU] : []);
+            setSelectedBusinessUnit(myBU ? myBU.name : "All");
+          }
         }
       } catch (error) {
         console.error("Error fetching business units:", error);
       }
     };
 
-    fetchBusinessUnits();
-  }, []);
+    if (token) fetchBusinessUnits();
+  }, [token, userBU, isSuperAdmin]);
 
   const handleSalaryCycleChange = async (event) => {
-      setSalaryCycle(event.target.value);
-    };
-    
+    setSalaryCycle(event.target.value);
+  };
+
 
   // Handle search query filtering
   const filteredLopData = lopData.filter((item) => {
-    const fullName = `${item.employeeName?.firstName || ""} ${
-      item.employeeName?.lastName || ""
-    }`.trim();
+    const fullName = `${item.employeeName?.firstName || ""} ${item.employeeName?.lastName || ""
+      }`.trim();
     return fullName.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
@@ -95,7 +112,8 @@ const LOP = () => {
         `${import.meta.env.VITE_APP_BASE_URL}/salary/importLopData`,
         {
           lops: lopData,
-        }
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       alert("LOP data has been updated successfully.");
     } catch (error) {
@@ -136,45 +154,46 @@ const LOP = () => {
         <LOPImport setLopData={setLopData} />
         <div className="flex gap-2 items-center flex-wrap">
           <div class="flex gap-2 employees-center">
-                  <label
-                    for="salary-cycle"
-                    class="block text-medium font-medium mb-2 text-blue-600"
-                  >
-                    Salary Cycle:
-                  </label>
-                  <input
-                    type="month"
-                    id="salary-cycle"
-                    name="salary-cycle"
-                    value={salaryCycle}
-                    onChange={handleSalaryCycleChange}
-                    class="border border-gray-300 rounded-md p-2 w-fit focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+            <label
+              for="salary-cycle"
+              class="block text-medium font-medium mb-2 text-blue-600"
+            >
+              Salary Cycle:
+            </label>
+            <input
+              type="month"
+              id="salary-cycle"
+              name="salary-cycle"
+              value={salaryCycle}
+              onChange={handleSalaryCycleChange}
+              class="border border-gray-300 rounded-md p-2 w-fit focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
 
-            {/* Business Unit Dropdown */}
-            <div className="flex items-center gap-2">
-              <label
-                htmlFor="business-unit"
-                className="text-sm font-medium text-gray-700 mb-1"
-              >
-                Business Unit
-              </label>
-              <select
-                id="business-unit"
-                value={selectedBusinessUnit}
-                onChange={(e) => setSelectedBusinessUnit(e.target.value)}
-                className="border border-gray-300 rounded-md p-2 w-48 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="All">All</option>
-                {businessUnits.map((unit) => (
-                  <option key={unit._id} value={unit.name}>
-                    {unit.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* Business Unit Dropdown */}
+          <div className="flex items-center gap-2">
+            <label
+              htmlFor="business-unit"
+              className="text-sm font-medium text-gray-700 mb-1"
+            >
+              Business Unit
+            </label>
+            <select
+              id="business-unit"
+              value={selectedBusinessUnit}
+              onChange={(e) => setSelectedBusinessUnit(e.target.value)}
+              disabled={!isSuperAdmin} // Disable the dropdown if they are a standard HR
+              className={`border border-gray-300 rounded-md p-2 w-48 focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isSuperAdmin ? "bg-gray-100 cursor-not-allowed" : ""}`}
+            >
+              {isSuperAdmin && <option value="All">All</option>}
+              {businessUnits.map((unit) => (
+                <option key={unit._id} value={unit.name}>
+                  {unit.name}
+                </option>
+              ))}
+            </select>
           </div>
+        </div>
       </div>
 
       <div className="overflow-x-auto">
@@ -205,14 +224,13 @@ const LOP = () => {
           <tbody>
             {filteredLopData.length > 0 ? (
               filteredLopData.map((item, index) => {
-                const fullName = `${item.employeeName?.firstName || ""} ${
-                  item.employeeName?.lastName || ""
-                }`.trim();
+                const fullName = `${item.employeeName?.firstName || ""} ${item.employeeName?.lastName || ""
+                  }`.trim();
                 const monthYear = `${item.month}-${item.year}`;
                 return (
                   <tr key={index}>
                     <td className="px-4 py-2 border">
-                    {item.employeeName?.employeeType}-{item.employeeName?.empId}
+                      {item.employeeName?.employeeType}-{item.employeeName?.empId}
                     </td>
                     <td className="px-4 py-2 border">
                       {fullName || "Unnamed Employee"}
@@ -237,10 +255,10 @@ const LOP = () => {
         </table>
       </div>
       <div className="flex justify-between mt-2">
-        
-      <button
+
+        <button
           className="bg-blue-500 text-white px-6 py-2 rounded-full hover:bg-blue-600"
-          onClick={()=>navigate('/payroll/run-payroll')}
+          onClick={() => navigate('/payroll/run-payroll')}
         >
           Back
         </button>

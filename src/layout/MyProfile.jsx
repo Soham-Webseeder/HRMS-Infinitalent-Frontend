@@ -4,10 +4,9 @@ import { Outlet } from "react-router-dom";
 import { Navbar } from "../components/Navbar";
 import { Personal_Profile } from "../components/my_profile/Personal_Profile";
 import { useSelector } from "react-redux";
-import { Second_sidebar } from "../components/Second_sidebar";
 import My_profile_Nav from "../components/my_profile/My_profile_Nav";
-import { SidebarUpdated } from "../components/SidebarUpdated";
 import { Sidebar } from "../components/Sidebar";
+
 export const MyProfile = () => {
   const { sidebar } = useSelector((state) => state.sidebar);
 
@@ -20,7 +19,7 @@ export const MyProfile = () => {
           </div>
         </div>
 
-        {sidebar ? <SidebarUpdated /> : null}
+        {sidebar ? <Sidebar /> : null}
       </div>
       <Navbar />
       {/* <My_profile_Nav /> */}

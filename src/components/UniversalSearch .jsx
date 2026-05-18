@@ -8,7 +8,6 @@ import { employeeLinksdata } from "./sidebarComponentLink/EmployeeSidebar";
 import { letterLinkData } from "./sidebarComponentLink/Letters";
 import { payrollData } from "./sidebarComponentLink/PayrollSidebar";
 import { reportData } from "./sidebarComponentLink/ReportSidebar";
-import { recruitmentData } from "./sidebarComponentLink/RecruitmentSidebar";
 
 // Function to combine menus with sub-menus and sub-menusTwo
 const combineMenus = (...menus) => {
@@ -181,7 +180,6 @@ const UniversalSearch = ({ isOpen, setIsOpen }) => {
     employeeLinksdata,
     letterLinkData,
     payrollData,
-    recruitmentData,
     reportData
   );
 

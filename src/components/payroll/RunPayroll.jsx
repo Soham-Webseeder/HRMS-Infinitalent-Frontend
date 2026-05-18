@@ -2,76 +2,89 @@ import axios from "axios";
 import { useState, useEffect, useRef } from "react";
 import { FaChevronDown, FaBolt, FaTimes, FaCalendarAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux"; // <-- 1. Import useSelector
 import PaySlipStep2 from "./PaySlipStep2";
 import Loader from "./Loader";
 
 export default function RunPayroll() {
   const [showModal, setShowModal] = useState(false);
-  const [businessUnits, setBusinessUnits] = useState([]); // Store business units
-  const [employees, setEmployees] = useState([]); // Store employee data
-  const [searchTerm, setSearchTerm] = useState(""); // For search functionality
-  const [filteredItems, setFilteredItems] = useState([]); // Store filtered results
-  const [dropdownOpen, setDropdownOpen] = useState(false); // Dropdown visibility
-  const [selectedItems, setSelectedItems] = useState([]); // Store selected items
+  const [businessUnits, setBusinessUnits] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredItems, setFilteredItems] = useState([]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [selectedItems, setSelectedItems] = useState([]);
   const [showStep2, setShowStep2] = useState(false);
-  const dropdownRef = useRef(null); // Create a ref to track the dropdown container
+  const dropdownRef = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [filteredEmployeesAfterSearch, setFilteredEmployeesAfterSearch] =
-    useState([]);
-
-  // Date range variables
-  const [customDateRange, setCustomDateRange] = useState(false);
-  const [startDay, setStartDay] = useState("1");
-  const [endDay, setEndDay] = useState("28");
-  const [showDateRangeModal, setShowDateRangeModal] = useState(false);
-  const [activeBuForDateRange, setActiveBuForDateRange] = useState(null);
+  const [filteredEmployeesAfterSearch, setFilteredEmployeesAfterSearch] = useState([]);
 
   const now = new Date();
-  now.setMonth(now.getMonth() - 1); // Set to last month
-  const lastMonth = String(now.getMonth() + 1).padStart(2, "0"); // Months are 0-indexed
+  now.setMonth(now.getMonth() - 1);
+  const lastMonth = String(now.getMonth() + 1).padStart(2, "0");
   const lastYear = now.getFullYear();
 
   const [salaryCycle, setSalaryCycle] = useState(`${lastYear}-${lastMonth}`);
+
+  // 2. Extract Token and Business Unit from Redux
+  const token = localStorage.getItem("token");
+  const userBU = localStorage.getItem("businessUnit");
+  const SUPER_BU_ID = "697f38fac6874300915ca642";
+  const isSuperAdmin = userBU === SUPER_BU_ID;
 
   const loading = () => {
     return new Promise((resolve) => {
       setIsLoading(true);
       setTimeout(() => {
         setIsLoading(false);
-        resolve(); // Resolve after 2 seconds
+        resolve();
       }, 2000);
     });
   };
 
-  // Fetch both business units and employees when the component mounts
+  // 3. Update useEffect to attach tokens and filter Business Units
   useEffect(() => {
     const fetchData = async () => {
       try {
         const businessUnitResponse = await axios.get(
-          `${import.meta.env.VITE_APP_BASE_URL}/company/get-bussinessUnits`
+          `${import.meta.env.VITE_APP_BASE_URL}/company/get-bussinessUnits`,
+          { headers: { Authorization: `Bearer ${token}` } } // <-- Attach Token
         );
         const employeeResponse = await axios.get(
-          `${import.meta.env.VITE_APP_BASE_URL}/employee/get-employees`
+          `${import.meta.env.VITE_APP_BASE_URL}/employee/get-employees`,
+          { headers: { Authorization: `Bearer ${token}` } } // <-- Attach Token
         );
 
+        let allowedBUs = [];
         if (businessUnitResponse.data) {
-          setBusinessUnits(businessUnitResponse.data.response || []);
+          const fetchedBUs = businessUnitResponse.data.response || [];
+
+          // UI Restriction Logic
+          if (isSuperAdmin) {
+            allowedBUs = fetchedBUs;
+          } else {
+            // Find the HR's specific BU from the list
+            const myBU = fetchedBUs.find(bu => bu._id === userBU);
+            allowedBUs = myBU ? [myBU] : [];
+          }
+          setBusinessUnits(allowedBUs);
         }
+
         if (employeeResponse.data) {
           setEmployees(employeeResponse.data.data || []);
         }
 
-        // Combine employees and business units for the initial dropdown
+        // Combine employees and filtered business units for the initial dropdown
         const combinedData = [
-          ...businessUnitResponse.data.response.map((unit) => ({
+          ...allowedBUs.map((unit) => ({
             _id: unit._id,
             name: unit.name,
             type: "Business Unit",
-            dateRange: null, // Initialize date range property
+            dateRange: null,
           })),
-          ...employeeResponse.data.data.map((emp) => ({
+          ...((employeeResponse.data && employeeResponse.data.data) || []).map((emp) => ({
             _id: emp._id,
-            name: `${emp.firstName} ${emp.lastName}`, // Construct full name from first and last names
+            name: `${emp.firstName} ${emp.lastName}`,
             type: "Employee",
           })),
         ];
@@ -81,8 +94,10 @@ export default function RunPayroll() {
       }
     };
 
-    fetchData();
-  }, []);
+    if (token) {
+      fetchData();
+    }
+  }, [token, userBU, isSuperAdmin]); // Add dependencies
 
   // Filter items based on the search term
   useEffect(() => {
@@ -96,7 +111,7 @@ export default function RunPayroll() {
     ];
 
     if (searchTerm === "") {
-      setFilteredItems(combinedData); // Show all when there's no search term
+      setFilteredItems(combinedData);
     } else {
       const filtered = combinedData.filter((item) =>
         item.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -107,94 +122,21 @@ export default function RunPayroll() {
 
   // Open date range modal before selecting a business unit
   const handleBusinessUnitPreselect = (item) => {
-    if (item.type === "Business Unit") {
-      setActiveBuForDateRange(item);
-      // Reset to default values or use existing values if the item already has a date range
-      if (item.dateRange) {
-        setStartDay(item.dateRange.startDay.toString());
-        setEndDay(item.dateRange.endDay.toString());
-        setCustomDateRange(item.dateRange.customRange);
-      } else {
-        setStartDay("1");
-        setEndDay("28");
-        setCustomDateRange(false);
-      }
-      setShowDateRangeModal(true);
-    } else {
-      handleSelectItem(item);
-    }
+    handleSelectItem(item); // No more modal! Just select it.
   };
 
-  // Handle changes in start day input
-  const handleStartDayChange = (e) => {
-    const value = e.target.value;
-    // Validate input: must be a number between 1 and 31
-    if (value === "" || (parseInt(value) >= 1 && parseInt(value) <= 31)) {
-      setStartDay(value);
-    }
-  };
-
-  // Handle changes in end day input
-  const handleEndDayChange = (e) => {
-    const value = e.target.value;
-    // Validate input: must be a number between 1 and 31
-    if (value === "" || (parseInt(value) >= 1 && parseInt(value) <= 31)) {
-      setEndDay(value);
-    }
-  };
-
-  // Apply date range and select business unit
-  const handleApplyDateRange = () => {
-    if (activeBuForDateRange) {
-      // Ensure start and end day are valid numbers
-      const startDayNum = parseInt(startDay) || 1;
-      const endDayNum = parseInt(endDay) || 28;
-
-      const itemWithDateRange = {
-        ...activeBuForDateRange,
-        dateRange: {
-          startDay: startDayNum,
-          endDay: endDayNum,
-          customRange: customDateRange,
-        },
-      };
-
-      // Update existing item or add new one
-      const itemIndex = selectedItems.findIndex(item => item._id === itemWithDateRange._id);
-      if (itemIndex >= 0) {
-        // Update existing item
-        const updatedItems = [...selectedItems];
-        updatedItems[itemIndex] = itemWithDateRange;
-        setSelectedItems(updatedItems);
-      } else {
-        // Add new item
-        setSelectedItems([...selectedItems, itemWithDateRange]);
-      }
-
-      // Close modals and reset active business unit
-      setShowDateRangeModal(false);
-      setActiveBuForDateRange(null);
-      setDropdownOpen(false);
-
-      fetchitemsData();
-    }
-  };
-
-  // Handle selecting an item (business unit or employee)
   const handleSelectItem = (item) => {
     if (item === "all Employee") {
       setSelectedItems([...selectedItems, { name: "All Employees" }]);
     } else {
-      // Add individual item to the selection
       if (!selectedItems.some((selected) => selected._id === item._id)) {
         setSelectedItems([...selectedItems, item]);
       }
     }
     fetchitemsData();
-    setDropdownOpen(false); // Close the dropdown after selecting an item
+    setDropdownOpen(false);
   };
 
-  // Remove selected item
   const handleRemoveItem = (item) => {
     if (item.name === "All Employees") {
       setSelectedItems((prev) =>
@@ -207,11 +149,10 @@ export default function RunPayroll() {
     }
   };
 
-  // Handle outside click to close dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setDropdownOpen(false); // Close dropdown if clicking outside
+        setDropdownOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -221,7 +162,7 @@ export default function RunPayroll() {
   }, []);
 
   const handleGeneratePayrollData = async () => {
-    await loading(); // Wait for the loading to complete
+    await loading();
     if (selectedItems.length > 0) {
       setShowModal(true);
     } else {
@@ -235,10 +176,12 @@ export default function RunPayroll() {
 
   const navigate = useNavigate();
 
+  // 4. Attach Token to fetchData API request
   const fetchData = async (id) => {
     try {
       const res = await axios.get(
-        `${import.meta.env.VITE_APP_BASE_URL}/employee/get-employees`
+        `${import.meta.env.VITE_APP_BASE_URL}/employee/get-employees`,
+        { headers: { Authorization: `Bearer ${token}` } } // <-- Attach Token
       );
       const employees = res.data.data;
 
@@ -247,7 +190,6 @@ export default function RunPayroll() {
       }
 
       const filtered = employees.filter((employee) => {
-        // FIX: Check if businessUnit is an object and compare its _id
         const buId = employee.businessUnit?._id || employee.businessUnit;
         return buId === id;
       });
@@ -265,10 +207,12 @@ export default function RunPayroll() {
     }
   };
 
+  // 5. Attach Token to fetchAllEmployees API request
   const fetchAllEmployees = async () => {
     try {
       const res = await axios.get(
-        `${import.meta.env.VITE_APP_BASE_URL}/employee/get-employees`
+        `${import.meta.env.VITE_APP_BASE_URL}/employee/get-employees`,
+        { headers: { Authorization: `Bearer ${token}` } } // <-- Attach Token
       );
       const employees = res.data.data;
       if (!Array.isArray(employees)) {
@@ -276,13 +220,12 @@ export default function RunPayroll() {
       }
 
       setFilteredEmployees((prevFiltered) => {
-        // Optionally, remove duplicates
         const combined = [...prevFiltered, ...employees];
         const uniqueEmployees = combined.filter(
           (employee, index, self) =>
-            index === self.findIndex((e) => e._id === employee._id) // Ensuring no duplicates
+            index === self.findIndex((e) => e._id === employee._id)
         );
-        return uniqueEmployees; // Return the unique list of employees
+        return uniqueEmployees;
       });
     } catch (error) {
       console.error("Error fetching employees:", error);
@@ -298,7 +241,7 @@ export default function RunPayroll() {
     setSelectedEmployees([]);
     selectedItems.forEach((item) => {
       if (item.type === "Business Unit") {
-        fetchData(item._id); // Call fetchData function with the Business Unit ID
+        fetchData(item._id);
       } else if (item.name === "All Employees") {
         fetchAllEmployees();
       }
@@ -307,9 +250,9 @@ export default function RunPayroll() {
 
   const handleSelectAll = () => {
     if (selectedEmployees.length === filteredEmployees.length) {
-      setSelectedEmployees([]); // Deselect all
+      setSelectedEmployees([]);
     } else {
-      setSelectedEmployees(filteredEmployees.map((e) => e._id)); // Select all filtered
+      setSelectedEmployees(filteredEmployees.map((e) => e._id));
     }
   };
 
@@ -325,11 +268,11 @@ export default function RunPayroll() {
   };
 
   const handleSaveClick = async () => {
-    setIsLoading(true); // Start loading immediately
+    setIsLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     if (selectedEmployees.length > 0) {
-      setShowModal(false); // Show modal
+      setShowModal(false);
       setShowStep2(true);
     } else {
       alert("Please select at least one employee to generate payroll data");
@@ -440,18 +383,21 @@ export default function RunPayroll() {
                   className="block appearance-none w-full bg-white border border-gray-300 text-gray-700 py-2 px-4 rounded leading-tight focus:outline-none focus:bg-white focus:border-blue-500"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  onFocus={() => setDropdownOpen(true)} // Open dropdown when focused
+                  onFocus={() => setDropdownOpen(true)}
                 />
 
                 {/* Dropdown */}
                 {dropdownOpen && filteredItems.length > 0 && (
                   <ul className="absolute z-10 bg-white border border-gray-300 w-full max-h-60 overflow-y-auto mt-1 rounded-md shadow-lg">
-                    <li
-                      onClick={() => handleSelectItem("all Employee")}
-                      className="cursor-pointer py-2 px-4 hover:bg-blue-100"
-                    >
-                      All Employee
-                    </li>
+                    {/* Only show 'All Employee' option for Super Admins */}
+                    {isSuperAdmin && (
+                      <li
+                        onClick={() => handleSelectItem("all Employee")}
+                        className="cursor-pointer py-2 px-4 hover:bg-blue-100"
+                      >
+                        All Employee
+                      </li>
+                    )}
                     {filteredItems.map((item) => (
                       <li
                         key={item._id}
@@ -492,110 +438,15 @@ export default function RunPayroll() {
               selectedEmployees={selectedEmployees}
               setShowStep2={setShowStep2}
               salaryCycleDate={salaryCycle}
-              startDay={startDay}
-              endDay={endDay}
-              dateRanges={selectedItems.reduce((acc, item) => {
-                if (item.type === "Business Unit" && item.dateRange) {
-                  acc[item._id] = item.dateRange;
-                }
-                return acc;
-              }, {})}
             />
           </div>
         </>
-      )}
-
-      {/* Date Range Modal */}
-      {showDateRangeModal && (
-        <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">
-                Set Payroll Date Range for {activeBuForDateRange?.name}
-              </h2>
-              <button
-                className="text-gray-500 hover:text-gray-700"
-                onClick={() => setShowDateRangeModal(false)}
-              >
-                <div className="w-5 h-5 bg-gray-300 text-center rounded-full">
-                  &#x2715;
-                </div>
-              </button>
-            </div>
-
-            <div className="mb-4">
-              <label className="flex items-center space-x-2 mb-2">
-                <input
-                  type="checkbox"
-                  checked={customDateRange}
-                  onChange={() => setCustomDateRange(!customDateRange)}
-                  className="form-checkbox"
-                />
-                <span>Custom date range</span>
-              </label>
-
-              <div className="flex space-x-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Start Day
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="31"
-                    value={startDay}
-                    onChange={handleStartDayChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    End Day
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="31"
-                    value={endDay}
-                    onChange={handleEndDayChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                </div>
-              </div>
-
-              {/* Show examples for clarity */}
-              <div className="mt-3 text-xs text-gray-500">
-                <p>Examples:</p>
-                <ul className="list-disc pl-5 mt-1">
-                  <li>20-20: Payroll from 20th of previous month to 20th of current month</li>
-                  <li>28-28: Payroll from 28th of previous month to 28th of current month</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => setShowDateRangeModal(false)}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleApplyDateRange}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-              >
-                Apply
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Employee Selection Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-end z-40">
           <div className="bg-white p-6 w-full max-w-md h-full">
-            {/* PayrollDataGenerator component */}
             <div className="bg-white shadow-lg rounded-lg max-w-md mx-auto p-2 h-full">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-semibold">

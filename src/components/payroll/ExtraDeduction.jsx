@@ -178,6 +178,11 @@ const ExtraDeductions = () => {
   const [salaryCycle, setSalaryCycle] = useState(`${lastYear}-${lastMonth}`);
   const navigate = useNavigate()
 
+  const token = localStorage.getItem("token");
+  const userBU = localStorage.getItem("businessUnit");
+  const SUPER_BU_ID = "697f38fac6874300915ca642";
+  const isSuperAdmin = userBU === SUPER_BU_ID;
+
   // Fetch employee LOP data
   useEffect(() => {
     const fetchExtraDeductionsData = async () => {
@@ -189,7 +194,8 @@ const ExtraDeductions = () => {
               businessUnit: selectedBusinessUnit,
               month: salaryCycle.split("-")[1],
               year: salaryCycle.split("-")[0]
-            }
+            },
+            headers: { Authorization: `Bearer ${token}` }
           }
         );
         const data = response.data.data;
@@ -207,25 +213,34 @@ const ExtraDeductions = () => {
     };
 
     fetchExtraDeductionsData();
-  }, [selectedBusinessUnit, salaryCycle]);
+  }, [selectedBusinessUnit, salaryCycle, token]);
 
   useEffect(() => {
     const fetchBusinessUnits = async () => {
       try {
         const businessUnitResponse = await axios.get(
-          `${import.meta.env.VITE_APP_BASE_URL}/company/get-bussinessUnits`
+          `${import.meta.env.VITE_APP_BASE_URL}/company/get-bussinessUnits`,
+          { headers: { Authorization: `Bearer ${token}` } }
         );
 
         if (businessUnitResponse.data) {
-          setBusinessUnits(businessUnitResponse.data.response || []);
+          const fetchedBUs = businessUnitResponse.data.response || [];
+
+          if (isSuperAdmin) {
+            setBusinessUnits(fetchedBUs);
+            setSelectedBusinessUnit("All");
+          } else {
+            const myBU = fetchedBUs.find(bu => bu._id === userBU);
+            setBusinessUnits(myBU ? [myBU] : []);
+            setSelectedBusinessUnit(myBU ? myBU.name : "All");
+          }
         }
       } catch (error) {
         console.error("Error fetching business units:", error);
       }
     };
-
-    fetchBusinessUnits();
-  }, []);
+    if (token) fetchBusinessUnits();
+  }, [token, isSuperAdmin, userBU]);
 
   // Handle search query filtering
   const filteredExtraDeductionsData = extraDeductionsData.filter((item) => {
@@ -323,9 +338,10 @@ const ExtraDeductions = () => {
               id="business-unit"
               value={selectedBusinessUnit}
               onChange={(e) => setSelectedBusinessUnit(e.target.value)}
-              className="border border-gray-300 rounded-md p-2 w-48 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={!isSuperAdmin} // Disable the dropdown if they are a standard HR
+              className={`border border-gray-300 rounded-md p-2 w-48 focus:outline-none focus:ring-2 focus:ring-blue-500 ${!isSuperAdmin ? "bg-gray-100 cursor-not-allowed" : ""}`}
             >
-              <option value="All">All</option>
+              {isSuperAdmin && <option value="All">All</option>}
               {businessUnits.map((unit) => (
                 <option key={unit._id} value={unit.name}>
                   {unit.name}

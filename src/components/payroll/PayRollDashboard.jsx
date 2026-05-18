@@ -35,10 +35,16 @@ export default function PayRollDashboard() {
 
   const navigate = useNavigate();
 
+  const token = localStorage.getItem("token");
+  const userBU = localStorage.getItem("businessUnit");
+  const SUPER_BU_ID = "697f38fac6874300915ca642";
+  const isSuperAdmin = userBU === SUPER_BU_ID;
+
   const fetchPayrollOverview = async () => {
     const response = await axios.get(
       `${import.meta.env.VITE_APP_BASE_URL}/payroll/getPayrollOverview?year=${salaryCycle.split("-")[0]
-      }&month=${salaryCycle.split("-")[1]}`
+      }&month=${salaryCycle.split("-")[1]}`,
+      { headers: { Authorization: `Bearer ${token}` } }
     );
 
 
@@ -57,11 +63,11 @@ export default function PayRollDashboard() {
               businessUnit: selectedBusinessUnit,
               month: salaryCycle.split("-")[1],
               year: salaryCycle.split("-")[0]
-            }
+            },
+            headers: { Authorization: `Bearer ${token}` }
           }
         );
         const data = response.data.data;
-        console.log(data.data)
         const uniqueMonths = new Set();
         data.forEach((item) => {
           uniqueMonths.add(`${item.month}-${item.year}`);
@@ -83,11 +89,23 @@ export default function PayRollDashboard() {
     const fetchBusinessUnits = async () => {
       try {
         const businessUnitResponse = await axios.get(
-          `${import.meta.env.VITE_APP_BASE_URL}/company/get-bussinessUnits`
+          `${import.meta.env.VITE_APP_BASE_URL}/company/get-bussinessUnits`,
+          { headers: { Authorization: `Bearer ${token}` } }
         );
 
         if (businessUnitResponse.data) {
-          setBusinessUnits(businessUnitResponse.data.response || []);
+          const fetchedBUs = businessUnitResponse.data.response || [];
+
+          // UI Restriction Logic
+          if (isSuperAdmin) {
+            setBusinessUnits(fetchedBUs);
+            setSelectedBusinessUnit("All");
+          } else {
+            const myBU = fetchedBUs.find(bu => bu._id === userBU);
+            setBusinessUnits(myBU ? [myBU] : []);
+            // Auto-select their BU
+            setSelectedBusinessUnit(myBU ? myBU.name : "All");
+          }
         }
       } catch (error) {
         console.error("Error fetching business units:", error);
@@ -159,12 +177,6 @@ export default function PayRollDashboard() {
                 <h1 className="text-2xl font-bold text-gray-800 mr-4">
                   Payroll data overview
                 </h1>
-                {/* <button className="text-blue-500 hover:text-blue-600">
-                  <FaSyncAlt className="h-5 w-5" />
-                </button>
-                <button className="text-blue-500 hover:text-blue-600 ml-2">
-                  <FaCopy className="h-5 w-5" />
-                </button> */}
               </div>
               <div className="text-gray-600">
                 <div class="flex gap-2 employees-center">
@@ -368,24 +380,12 @@ export default function PayRollDashboard() {
                 <table className="min-w-full border-separate border-spacing-y-2 max-h-2/4 overflow-y-scroll">
                   <thead className="bg-slate-100">
                     <tr className="max-xs:text-sm sm:text-sm">
-                      <th className="p-2 text-left font-medium whitespace-nowrap">
-                        Employee ID
-                      </th>
-                      <th className="p-2 text-left font-medium whitespace-nowrap">
-                        Name
-                      </th>
-                      <th className="p-2 text-left font-medium whitespace-nowrap">
-                        Department
-                      </th>
-                      <th className="p-2 text-left font-medium whitespace-nowrap">
-                        Designation
-                      </th>
-                      <th className="p-2 text-left font-medium whitespace-nowrap">
-                        Business Unit
-                      </th>
-                      <th className="p-2 text-left font-medium whitespace-nowrap">
-                        Net Salary
-                      </th>
+                      <th className="p-2 text-left font-medium whitespace-nowrap">Employee ID</th>
+                      <th className="p-2 text-left font-medium whitespace-nowrap">Name</th>
+                      <th className="p-2 text-left font-medium whitespace-nowrap">Department</th>
+                      <th className="p-2 text-left font-medium whitespace-nowrap">Designation</th>
+                      <th className="p-2 text-left font-medium whitespace-nowrap">Business Unit</th>
+                      <th className="p-2 text-left font-medium whitespace-nowrap">Net Salary</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -397,7 +397,6 @@ export default function PayRollDashboard() {
                       </tr>
                     ) : (
                       filteredSalarySheet.map((payroll) => {
-                        // Skip rendering if employeeName is null or undefined
                         if (!payroll.employeeName) return null;
                         const businessUnitName = businessUnits.find(
                           (unit) => unit._id === payroll.employeeName.businessUnit

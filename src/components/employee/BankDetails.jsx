@@ -1,41 +1,30 @@
-import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import React from "react";
+import { useDispatch } from "react-redux";
 import { increment, decrement } from "../../redux/slices/CounterSlice";
 
-const BankDetails = () => {
-  const [formData, setFormData] = useState({
-    bankName: "",
-    branchName: "",
-    accountNo: "",
-    acHolderName: "",
-    accountType: "",
-    ifscCode: "",
-  });
+const BankDetails = ({ formData, setFormData }) => {
   const dispatch = useDispatch();
-  const currentForm = useSelector((state) => state.counter);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    // Update the parent state directly using the provided setFormData function
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  useEffect(() => {
-    const savedFormData = localStorage.getItem("formData");
-    if (savedFormData) {
-        setFormData(JSON.parse(savedFormData));
-    }
-  }, []);
-  const handleSubmit = async (e) => {
-    console.log(formData, "Bank");
+  const handleSubmit = (e) => {
     e.preventDefault();
-    localStorage.setItem("formData", JSON.stringify(formData));
+    // Data persistence is managed by the parent component AddEmployee2.jsx
     dispatch(increment());
   };
+
   return (
     <div className="bg-zinc-100">
-      <div className="bg-white shadow-md rounded-lg p-6">
+      <div className="bg-gray-100 rounded-lg pl-5 pr-5">
         <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-2 gap-6 h-[60vh]">
+          <div className="grid grid-cols-2 gap-6">
             {/* Left Column */}
             <div>
               <div className="mb-4">
@@ -51,7 +40,7 @@ const BankDetails = () => {
                   name="bankName"
                   type="text"
                   required
-                  value={formData.bankName}
+                  value={formData.bankName || ""}
                   onChange={handleInputChange}
                   placeholder="Bank Name"
                 />
@@ -69,7 +58,7 @@ const BankDetails = () => {
                   name="branchName"
                   type="text"
                   required
-                  value={formData.branchName}
+                  value={formData.branchName || ""}
                   onChange={handleInputChange}
                   placeholder="Branch Name"
                 />
@@ -87,7 +76,7 @@ const BankDetails = () => {
                   name="accountNo"
                   type="number"
                   required
-                  value={formData.accountNo}
+                  value={formData.accountNo || ""}
                   onChange={handleInputChange}
                   placeholder="Account Number"
                 />
@@ -109,7 +98,7 @@ const BankDetails = () => {
                   name="acHolderName"
                   type="text"
                   required
-                  value={formData.acHolderName}
+                  value={formData.acHolderName || ""}
                   onChange={handleInputChange}
                   placeholder="Account Holder Name"
                 />
@@ -125,7 +114,7 @@ const BankDetails = () => {
                   className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                   id="accountType"
                   name="accountType"
-                  value={formData.accountType}
+                  value={formData.accountType || ""}
                   required
                   onChange={handleInputChange}
                 >
@@ -148,24 +137,25 @@ const BankDetails = () => {
                   name="ifscCode"
                   type="text"
                   required
-                  value={formData.ifscCode}
+                  value={formData.ifscCode || ""}
                   onChange={handleInputChange}
                   placeholder="IFSC Code"
                 />
               </div>
             </div>
           </div>
+
           <div className="flex justify-between mt-8">
             <button
               onClick={() => dispatch(decrement())}
               type="button"
-              className="bg-zinc-300 hover:bg-zinc-400 text-zinc-800 font-bold py-2 px-4 rounded-l"
+              className="border-black mb-4 border px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
             >
               Previous
             </button>
             <button
               type="submit"
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r"
+              className="border-black mb-4 border px-8 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
             >
               NEXT
             </button>

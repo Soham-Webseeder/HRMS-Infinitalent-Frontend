@@ -13,7 +13,12 @@ function PunchStatus() {
     const fetchDepartments = async () => {
       try {
         const response = await axios.get(
-          `${import.meta.env.VITE_APP_BASE_URL}/dashboard/getDashboardData`
+          `${import.meta.env.VITE_APP_BASE_URL}/dashboard/getDashboardData`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
         );
         setDepartments(response.data.departments);
       } catch (error) {
@@ -36,7 +41,12 @@ function PunchStatus() {
     const fetchPunchStatus = async () => {
       try {
         const response = await axios.get(
-          `${import.meta.env.VITE_APP_BASE_URL}/dashboard/getPunchStatusByDepartmentAndDate?department=${selectedBranch}&date=${selectedDate}`
+          `${import.meta.env.VITE_APP_BASE_URL}/dashboard/getPunchStatusByDepartmentAndDate?department=${selectedBranch}&date=${selectedDate}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
         );
         setPunchStatusData(response.data.data || {});
       } catch (error) {

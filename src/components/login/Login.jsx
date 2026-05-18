@@ -47,7 +47,8 @@ const Login = () => {
 
           localStorage.setItem("token", res.data.token);
           localStorage.setItem("companyId", res.data.user.companyId || "");
-          
+          localStorage.setItem("businessUnit", res.data.user.businessUnit || "");
+
           dispatch(setEmployeeAllData(res.data.user));
           
           dispatch(setEmployeeRole(res.data.user.role));
@@ -56,7 +57,7 @@ const Login = () => {
           if (res.data.user.role === "admin") {
             navigate("/");
           } else {
-            navigate("/emp/dashboard");
+            navigate("/");
           }
         }
       } catch (error) {

@@ -2,9 +2,9 @@ import React from "react";
 
 import { Outlet } from "react-router-dom";
 import { Navbar } from "../components/Navbar";
-import { SidebarUpdated } from "../components/SidebarUpdated";
-import { useSelector } from "react-redux";
 import { Sidebar } from "../components/Sidebar";
+import { useSelector } from "react-redux";
+
 
 export const Report = () => {
   const { sidebar } = useSelector((state) => state.sidebar);
@@ -13,7 +13,7 @@ export const Report = () => {
     <div className={`flex w-full h-full  `}>
 
       <div className={` ${sidebar ? 'max-md:hidden' : ''}`}>
-      <SidebarUpdated />
+      <Sidebar />
       </div>
 
 

@@ -68,21 +68,7 @@ export const employeeLinksdata = {
       cName: "sub-nav",
       path: "/employee/ex-employee",
     },
-  ],
-  subMenusTwo: [
-    {
-      title: "Add Candidate",
-      icon: <IoPersonAddSharp fontSize={15} color={"grey"} />,
-      cName: "sub-nav",
-      path: "/recruitment/add-candidate",
-    },
-    {
-      title: "Recruitment Management",
-      icon: <FaProjectDiagram fontSize={15} color={"grey"} />,
-      cName: "sub-nav",
-      path: "/recruitment/recruitment-management",
-    },
-  ],
+  ]
 };
 function EmployeeSidebar() {
   return (

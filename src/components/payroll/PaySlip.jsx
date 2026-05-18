@@ -68,30 +68,14 @@ export default function PaySlip() {
   const [users, setUsers] = useState([]);
   const { toPDF, targetRef } = usePDF({ filename: "page.pdf" });
 
+  const token = localStorage.getItem("token");
+  
   const toggleModal = () => {
     setIsModalOpen(!isModalOpen);
   };
 
   useEffect(() => {
     fetchEmployees();
-  }, []);
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_APP_BASE_URL}/auth/getUsers`
-        );
-        const filteredUsers = response.data.data.filter(
-          (user) => user.role === "hr" || user.role === "admin"
-        );
-        setUsers(filteredUsers);
-      } catch (error) {
-        console.error("Error fetching users", error);
-      }
-    };
-
-    fetchUsers();
   }, []);
 
   // Helper function to format UTC date strings to "Month Year"
@@ -125,7 +109,8 @@ export default function PaySlip() {
   const fetchEmployees = async () => {
     try {
       const response = await axios.get(
-        `${import.meta.env.VITE_APP_BASE_URL}/employee/get-employees`
+        `${import.meta.env.VITE_APP_BASE_URL}/employee/get-employees`,
+        { headers: { Authorization: `Bearer ${token}` } } // Attach token
       );
       setEmployees(response.data.data);
     } catch (error) {
@@ -136,19 +121,18 @@ export default function PaySlip() {
   const fetchBusinessUnits = async () => {
     try {
       const response = await axios.get(
-        `${import.meta.env.VITE_APP_BASE_URL}/company/get-bussinessUnits`
+        `${import.meta.env.VITE_APP_BASE_URL}/company/get-bussinessUnits`,
+        { headers: { Authorization: `Bearer ${token}` } } // Attach token
       );
-      const businessUnits = response.data.response;
-      setBusinessUnits(businessUnits);
-      // Removed setSecondDropdownOptions as it was not defined
+      setBusinessUnits(response.data.response);
     } catch (error) {
       console.error("Error fetching business units:", error);
     }
   };
 
   useEffect(() => {
-    fetchBusinessUnits();
-  }, []);
+   if (token) fetchBusinessUnits();
+  }, [token]);
 
   const getBusinessUnitName = (bu) => {
     // 1. If 'bu' is already a populated object (sent from backend), return its name
@@ -168,7 +152,8 @@ export default function PaySlip() {
       setLoadingPayslip(true);
       const response = await axios.get(
         `${import.meta.env.VITE_APP_BASE_URL}/payroll/getPayrollByFiscalYear/${selectedEmployee?._id
-        }?fiscalYear=${financialStartYear}`
+        }?fiscalYear=${financialStartYear}`,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       if (response.data.success) {
         setcurrentPayslip(response.data.data);
@@ -231,7 +216,8 @@ export default function PaySlip() {
     try {
       const response = await axios.post(
         `${import.meta.env.VITE_APP_BASE_URL}/payroll/generateAllPayrolls`,
-        payload
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       toggleModal();
     } catch (error) {

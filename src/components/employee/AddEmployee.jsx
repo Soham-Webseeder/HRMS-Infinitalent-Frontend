@@ -1,80 +1,76 @@
 import { RxCross1 } from "react-icons/rx";
 import React, { useState, useEffect } from "react";
-import PositionalInformation from "../employeeComponents/PositionalInformation2";
-import Benefit from "../employeeComponents/Benefit2";
-import BiographicalInfo from "../employeeComponents/BiographicalInfo2";
-import AdditionalAddress from "../employeeComponents/AdditionalAddress2";
-import Custom from "./Custom";
-import LoginInfo from "../employeeComponents/LoginInfo2";
+import PositionalInformation from "./PositionalInformation";
+import Benefit from "./Benefit";
+import BiographicalInfo from "./BiographicalInfo";
+import EmergencyContact from "./EmergencyContact";
+import LoginInfo from "./LoginInfo";
 import { useDispatch, useSelector } from "react-redux";
-import { increment, decrement } from "../../redux/slices/CounterSlice";
+import { increment, decrement, setStep } from "../../redux/slices/CounterSlice";
 import axios from "axios";
 import { setModal } from "../../redux/slices/SidebarSlice";
-import BankDetails from "../employeeComponents/BankDetails2";
-export default function AddEmployee({ updateId, setUpdateId, type }) {
-  const [counter, setCounter] = useState();
+import BankDetails from "./BankDetails";
+import { Link, useNavigate } from "react-router-dom";
+
+export default function AddEmployee2({ updateId, setUpdateId }) {
   const dispatch = useDispatch();
   const currentForm = useSelector((state) => state.counter);
 
-  const [formData, setFormData] = useState({
-    firstName: "",
-    middleName: "",
-    lastName: "",
-    maidenName: "",
-    email: "",
-    phone: "",
-    alternativePhone: "",
-    country: "",
-    city: "",
-    zipCode: "",
-    empId: 1,
+  const [formData, setFormData] = useState(() => {
+    const saved = localStorage.getItem("formData");
+    const defaultData = {
+      firstName: "", middleName: "", lastName: "", email: "", phone: "", alternativePhone: "", country: "", city: "", zipCode: "",
+      empId: "", designation: "", position: "", department: "", businessUnit: "", employmentStatus: "Active", employeeType: "ICPL", hireDate: "", originalHireDate: "",
+      salary: "", bankName: "", branchName: "", accountNo: "", acHolderName: "", accountType: "Saving", ifscCode: "",
+      aadharCard: "", panCard: "", uanNo: "", esicNo: "", photograph: "", resume: "", SSC: "", HSC: "",
+      documents: [{ docName: "", docDocument: "" }],
+      dateOfBirth: "", gender: "", maritalStatus: "Single", religion: "", citizenship: "",
+      homeEmail: "", homePhone: "", cellPhone: "", businessEmail: "", businessPhone: "",
+      emrContact: "", emrContactName: "", emrContactRelation: "",
+      alterEmrContact: "", alterEmrContactName: "", alterEmrRelation: "",
+      password: "", userEmail: "", isTrackingEnabled: true, geofenceCenter: [], geofenceRadius: 0, active: true
+    };
+    return saved ? { ...defaultData, ...JSON.parse(saved) } : defaultData;
   });
+
+  const [emailError, setEmailError] = useState("");
+
+  useEffect(() => {
+    localStorage.setItem("formData", JSON.stringify(formData));
+  }, [formData]);
+
+  useEffect(() => {
+    if (updateId) {
+      const getUserData = async () => {
+        const response = await axios.get(`${import.meta.env.VITE_APP_BASE_URL}/employee/getEmployeeById/${updateId}`);
+        setFormData(response.data.data);
+      };
+      getUserData();
+    }
+  }, [updateId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(formData, "formData");
-    localStorage.setItem("formData", JSON.stringify(formData));
-    if (formData) {
-      dispatch(increment());
-    }
+    setEmailError("");
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_APP_BASE_URL}/employee/checkEmail?email=${formData.email}`);
+      if (res.data.data?.exist && !updateId) {
+        setEmailError("This email already exists.");
+      } else {
+        dispatch(increment());
+      }
+    } catch (err) { console.error(err); }
   };
 
-
-  useEffect(() => {
-    const savedFormData = localStorage.getItem("formData");
-    if (savedFormData) {
-      console.log(JSON.parse(savedFormData));
-    }
-
-    const getData = async () => {
-      const response = await axios.get(
-        `${import.meta.env.VITE_APP_BASE_URL}/employee/getAllEmployees`
-      );
-      console.log(response.data.data, "emp");
-
-      setCounter(response.data.data.length + 1);
-      console.log("length", counter);
-      setFormData((prev) => ({
-        ...prev,
-        empId: counter,
-      }));
-    };
-    getData();
-  }, []);
-  
   useEffect(() => {
     const getUserData = async () => {
       const response = await axios.get(
-        `${
-          import.meta.env.VITE_APP_BASE_URL
+        `${import.meta.env.VITE_APP_BASE_URL
         }/employee/getEmployeeById/${updateId}`
       );
 
@@ -82,30 +78,22 @@ export default function AddEmployee({ updateId, setUpdateId, type }) {
       setFormData(response.data.data);
     };
     getUserData();
-  }, []);
+  }, [updateId]);
 
   const renderForm = () => {
     switch (currentForm) {
       case 1:
-        return <BiographicalInfo />;
+        return <BiographicalInfo formData={formData} setFormData={setFormData} updateId={updateId} />;
       case 2:
-        return <PositionalInformation />;
-      // case 3:
-      //   return <Class />;
+        return <PositionalInformation formData={formData} setFormData={setFormData} updateId={updateId} />;
       case 3:
-        return <BankDetails />;
-      // case 4:
-      //   return <Supervisor />;
+        return <BankDetails formData={formData} setFormData={setFormData} updateId={updateId} />;
       case 4:
-        return <Benefit />;
+        return <Benefit formData={formData} setFormData={setFormData} updateId={updateId} />;
       case 5:
-        return <AdditionalAddress />;
-      // case 5:
-      //   return <EmergencyContact />;
-      // case 6:
-      //   return <Custom />;
+        return <EmergencyContact formData={formData} setFormData={setFormData} updateId={updateId} />;
       case 6:
-        return <LoginInfo updateId={updateId} setUpdateId={setUpdateId} />;
+        return <LoginInfo formData={formData} setFormData={setFormData} updateId={updateId} />;
 
       case "basicInfo":
       default:
@@ -113,7 +101,7 @@ export default function AddEmployee({ updateId, setUpdateId, type }) {
           <div className="bg-zinc-100 w-full ">
             <div className="bg-gray-100 pl-5 pr-5 ">
               <form onSubmit={handleSubmit} className="">
-                <div className="h-[60vh]">
+                <div>
                   <div className="mt-4 grid grid-cols-2 gap-4 ">
                     <div className="mb-2">
                       <label className="block text-sm font-medium text-zinc-700">
@@ -133,6 +121,7 @@ export default function AddEmployee({ updateId, setUpdateId, type }) {
                       <label className="block text-sm font-medium text-zinc-700">
                         Email Address <span className="text-red-500">*</span>
                       </label>
+                      {emailError && <p className="text-red-500 text-sm">{emailError}</p>}
                       <input
                         type="email"
                         name="email"
@@ -241,12 +230,12 @@ export default function AddEmployee({ updateId, setUpdateId, type }) {
                   </div>
                 </div>
                 <div className="flex w-full  justify-between mt-8">
-                <button
+                  <button
                     type="button"
-                    onClick={()=>window.location.reload()}
                     className="border-black mb-4 border px-5 py-1 bg-blue-600  text-white rounded-full hover:bg-blue-700 mr-8 sm:text-xs text-xs md:text-base flex items-center justify-end gap-2"
+                    onClick={() => window.location.reload()}
                   >
-                  Back
+                    Back
                   </button>
                   <button
                     type="submit"
@@ -267,144 +256,108 @@ export default function AddEmployee({ updateId, setUpdateId, type }) {
       <div className="p-4 md:p-6 lg:p-8">
         <div className="w-full mb-4 pb-4 border-b border-gray-200 flex flex-col md:flex-row items-center justify-between">
           <div>
-            <h1 className="text-2xl font-medium">
+            <h1 className=" text-xl md:text-2xl font-bold mb-2">
               {updateId ? "Update" : "Create"} Employee
             </h1>
-            <p className="font-light text-gray-600 mt-4">
-              <span class="cursor-pointer">Home</span> |
-              <span class="cursor-pointer"> Employee</span> |
-              <span class="cursor-pointer"> Update Employee</span>
-            </p>
-          </div>
-          <div className="flex space-x-4 pb-4 items-center ml-auto">
-            {updateId && (
-              <button onClick={() => dispatch(setModal(false))}>
-                <RxCross1 size={25} />
-              </button>
-            )}
+            <div className="flex text-sm w-fit text-gray-500 mt-1 gap-1">
+              <Link to="/" className="cursor-pointer hover:text-slate-800">
+                Home
+              </Link>
+              <span>|</span>
+              <Link to="/app/employee" className="cursor-pointer hover:text-slate-800">
+                Employee
+              </Link>
+              <span>|</span>
+              <span className="cursor-default text-gray-500 hover:text-slate-800">
+                Add Employee
+              </span>
+            </div>
           </div>
           <hr className="my-4 " />
+        </div>
+        <div className="flex space-x-4 pb-4 justify-between items-center">
+          {updateId && (
+            <button onClick={() => dispatch(setModal(false))}>
+              <RxCross1 size={20} />
+            </button>
+          )}
         </div>
         <div className="bg-gray-100 border-gray-200 border rounded-md ">
           <div className="overflow-x-auto">
             <ul className="flex space-x-2  text-nowrap">
               <li>
                 <button
-                  className={`py-2 px-4 text-sm ${
-                    currentForm === 0
-                      ? "text-blue-600 border-b-2 border-blue-600 font-medium"
-                      : "text-zinc-600 hover:text-blue-600"
-                  }`}
+                  onClick={() => dispatch(setStep(0))}
+                  className={`py-2 px-4 text-sm ${currentForm === 0
+                    ? "text-blue-600 border-b-2 border-blue-600 font-medium"
+                    : "text-zinc-600 hover:text-blue-600"
+                    }`}
                 >
                   Basic Info
                 </button>
               </li>
               <li>
                 <button
-                  className={`py-2 px-4 text-sm ${
-                    currentForm === 1
-                      ? "text-blue-600 border-b-2 border-blue-600 font-medium"
-                      : "text-zinc-600 hover:text-blue-600"
-                  }`}
+                  onClick={() => dispatch(setStep(1))}
+                  className={`py-2 px-4 text-sm ${currentForm === 1
+                    ? "text-blue-600 border-b-2 border-blue-600 font-medium"
+                    : "text-zinc-600 hover:text-blue-600"
+                    }`}
                 >
                   Biographical Info
                 </button>
               </li>
               <li>
                 <button
-                  className={`py-2 px-4 text-sm ${
-                    currentForm === 2
-                      ? "text-blue-600 border-b-2 border-blue-600 font-medium"
-                      : "text-zinc-600 hover:text-blue-600"
-                  }`}
+                  onClick={() => dispatch(setStep(2))}
+                  className={`py-2 px-4 text-sm ${currentForm === 2
+                    ? "text-blue-600 border-b-2 border-blue-600 font-medium"
+                    : "text-zinc-600 hover:text-blue-600"
+                    }`}
                 >
                   Positional Information
                 </button>
               </li>
               <li>
                 <button
-                  className={`py-2 px-4 text-sm ${
-                    currentForm === 3
-                      ? "text-blue-600 border-b-2 border-blue-600 font-medium"
-                      : "text-zinc-600 hover:text-blue-600"
-                  }`}
+                  onClick={() => dispatch(setStep(3))}
+                  className={`py-2 px-4 text-sm ${currentForm === 3
+                    ? "text-blue-600 border-b-2 border-blue-600 font-medium"
+                    : "text-zinc-600 hover:text-blue-600"
+                    }`}
                 >
                   Bank Details
                 </button>
               </li>
-              {/* <li>
-                  <button
-                    className={`py-2 px-4 text-sm ${
-                      currentForm === 3
-                        ? "text-blue-600 border-b-2 border-blue-600 font-medium"
-                        : "text-zinc-600 hover:text-blue-600"
-                    }`}
-                  >
-                    Class
-                  </button>
-                </li>
-                <li>
-                  <button
-                    className={`py-2 px-4 text-sm ${
-                      currentForm === 4
-                        ? "text-blue-600 border-b-2 border-blue-600 font-medium"
-                        : "text-zinc-600 hover:text-blue-600"
-                    }`}
-                  >
-                    Supervisor
-                  </button>
-                </li> */}
               <li>
                 <button
-                  className={`py-2 px-4 text-sm ${
-                    currentForm === 4
-                      ? "text-blue-600 border-b-2 border-blue-600 font-medium"
-                      : "text-zinc-600 hover:text-blue-600"
-                  }`}
+                  onClick={() => dispatch(setStep(4))}
+                  className={`py-2 px-4 text-sm ${currentForm === 4
+                    ? "text-blue-600 border-b-2 border-blue-600 font-medium"
+                    : "text-zinc-600 hover:text-blue-600"
+                    }`}
                 >
                   Benefit
                 </button>
               </li>
               <li>
                 <button
-                  className={`py-2 px-4 text-sm ${
-                    currentForm === 5
-                      ? "text-blue-600 border-b-2 border-blue-600 font-medium"
-                      : "text-zinc-600 hover:text-blue-600"
-                  }`}
+                  onClick={() => dispatch(setStep(5))}
+                  className={`py-2 px-4 text-sm ${currentForm === 5
+                    ? "text-blue-600 border-b-2 border-blue-600 font-medium"
+                    : "text-zinc-600 hover:text-blue-600"
+                    }`}
                 >
                   Additional Info
                 </button>
               </li>
-              {/* <li>
-                  <button
-                    className={`py-2 px-4 text-sm ${
-                      currentForm === 5
-                        ? "text-blue-600 border-b-2 border-blue-600 font-medium"
-                        : "text-zinc-600 hover:text-blue-600"
-                    }`}
-                  >
-                    Emergency Contact
-                  </button>
-                </li> */}
-              {/* <li>
-                  <button
-                    className={`py-2 px-4 text-sm ${
-                      currentForm === 6
-                        ? "text-blue-600 border-b-2 border-blue-600 font-medium"
-                        : "text-zinc-600 hover:text-blue-600"
-                    }`}
-                  >
-                    Custom
-                  </button>
-                </li> */}
               <li>
                 <button
-                  className={`py-2 px-4 text-sm ${
-                    currentForm === 6
-                      ? "text-blue-600 border-b-2 border-blue-600 font-medium"
-                      : "text-zinc-600 hover:text-blue-600"
-                  }`}
+                  onClick={() => dispatch(setStep(6))}
+                  className={`py-2 px-4 text-sm ${currentForm === 6
+                    ? "text-blue-600 border-b-2 border-blue-600 font-medium"
+                    : "text-zinc-600 hover:text-blue-600"
+                    }`}
                 >
                   Login Info
                 </button>

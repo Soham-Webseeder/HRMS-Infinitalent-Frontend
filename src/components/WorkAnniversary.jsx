@@ -18,7 +18,12 @@ function WorkAnniversary() {
 
       try {
         const response = await axios.get(
-          `${import.meta.env.VITE_APP_BASE_URL}/dashboard/getDashboardData`
+          `${import.meta.env.VITE_APP_BASE_URL}/dashboard/getDashboardData`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
         );
         
         // Destructure "anniversaries" from the new backend response format

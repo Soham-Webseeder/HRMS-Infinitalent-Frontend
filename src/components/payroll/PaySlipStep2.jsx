@@ -34,7 +34,7 @@ export default function PaySlipStep2({
   now.setMonth(now.getMonth() - 1); // Set to last month
   const lastMonth = String(now.getMonth() + 1).padStart(2, "0"); // Months are 0-indexed
   const lastYear = now.getFullYear();
-
+  const token = localStorage.getItem("token");
   const [salaryCycle, setSalaryCycle] = useState(salaryCycleDate);
   const [checked, setChecked] = useState(false);
   const [displayStep2, setDisplayStep2] = useState(true);
@@ -70,13 +70,12 @@ export default function PaySlipStep2({
       const responses = await axios.post(
         `${import.meta.env.VITE_APP_BASE_URL}/payroll/generatePayrollsOfEmployees`,
         {
-          startDate: startDay,
-          endDate: endDay,
           selectedEmployees,
           month: salaryCycle?.split("-")[1],
           year: salaryCycle?.split("-")[0],
           userID
-        }
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       toast.success("Payroll data generated successfully!");
@@ -104,13 +103,12 @@ export default function PaySlipStep2({
       const responses = await axios.post(
         `${import.meta.env.VITE_APP_BASE_URL}/payroll/generateCtcPayrollOfEmployees`,
         {
-          startDate: startDay,
-          endDate: endDay,
           selectedEmployees,
           month: salaryCycle?.split("-")[1],
           year: salaryCycle?.split("-")[0],
           userID
-        }
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       toast.success("Payroll data generated successfully!");
@@ -137,13 +135,12 @@ export default function PaySlipStep2({
       const responses = await axios.post(
         `${import.meta.env.VITE_APP_BASE_URL}/payroll/generateNAPSStipendOfEmployees`,
         {
-          startDate: startDay,
-          endDate: endDay,
           selectedEmployees,
           month: salaryCycle?.split("-")[1],
           year: salaryCycle?.split("-")[0],
           userID
-        }
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       toast.success("Payroll data generated successfully!");

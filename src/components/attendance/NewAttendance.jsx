@@ -23,7 +23,7 @@ function NewAttendance() {
   const [showLogDetails, setShowLogDetails] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [attendanceDropdown, setAttendanceDropdown] = useState(false);
-  const [updateAttendencePop, setupdateAttendencePop] = useState(false);
+  const [updateAttendancePop, setupdateAttendancePop] = useState(false);
   const [clockInReqPop, setclockInReqPop] = useState(false);
   const [tablePopup, setTablePopup] = useState(-1);
   const [bulkRegData, setBulkRegData] = useState({ shiftDate: "", shift: "" });

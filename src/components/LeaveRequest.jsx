@@ -13,7 +13,12 @@ const LeaveRequests = () => {
     const fetchData = async () => {
       try {
         const response = await axios.get(
-          `${import.meta.env.VITE_APP_BASE_URL}/dashboard/getDashboardData`
+          `${import.meta.env.VITE_APP_BASE_URL}/dashboard/getDashboardData`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
         );
         setLeaveRequests(response.data.leaveRequests);
         console.log(response.data.leaveRequests,"Name")

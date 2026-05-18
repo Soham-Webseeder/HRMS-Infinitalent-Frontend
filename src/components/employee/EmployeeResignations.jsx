@@ -12,13 +12,20 @@ const EmployeeResignations = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [showModal, setShowModal] = useState(false);
 
+  const token = localStorage.getItem("token");
+
   const navigate = useNavigate();
 
   // Fetch employee resignation requests
   const fetchData = async () => {
     try {
       const response = await axios.get(
-        `${import.meta.env.VITE_APP_BASE_URL}/employee/getAllEmployeeResignation`
+        `${import.meta.env.VITE_APP_BASE_URL}/employee/getAllEmployeeResignation`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}` // <-- Attach Token
+          }
+        }
       );
       const data = response.data.data || [];
       setChangeRequests(data);
@@ -50,7 +57,12 @@ const EmployeeResignations = () => {
     try {
       await axios.patch(
         `${import.meta.env.VITE_APP_BASE_URL}/employee/updateEmployeeResignation/${selectedRequest._id}`,
-        { status: newStatus }
+        { status: newStatus },
+        {
+          headers: {
+            Authorization: `Bearer ${token}` 
+          }
+        }
       );
       toast.success(`Resignation ${newStatus === "Approved" ? "accepted" : "rejected"} successfully`);
       setShowModal(false);

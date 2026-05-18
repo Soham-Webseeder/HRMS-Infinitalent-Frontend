@@ -11,12 +11,6 @@ export const payrollData = {
   path: "/app/payroll",
   prePath: "payroll",
   subMenus: [
-    // {
-    //   title: "Salary Setup",
-    //   icon: <GiMoneyStack fontSize={15} color={"grey"} />,
-    //   cName: "sub-nav",
-    //   path: "/payroll/salary-setup",
-    // },
     {
       title: "Payroll Dashboard",
       icon: <CiMoneyBill fontSize={15} color={"grey"} />,
@@ -50,39 +44,12 @@ export const payrollData = {
       cName: "sub-nav",
       path: "/payroll/extra-deduction",
     },
-
     {
       title: "Delete Payroll",
       icon: <MdManageHistory fontSize={15} color={"grey"} />,
       cName: "sub-nav",
       path: "/payroll/delete-payroll",
-    },
-
-    {
-      title: "Package & Proration",
-      icon: <MdManageHistory fontSize={15} color={"grey"} />,
-      cName: "sub-nav",
-      path: "/payroll/package-proration",
-    },
-    {
-      title: "IT Declaration",
-      icon: <MdManageHistory fontSize={15} color={"grey"} />,
-      cName: "sub-nav",
-      path: "/payroll/IT-declaration",
-    },
-
-    {
-      title: "Income Tax",
-      icon: <CiMoneyBill fontSize={15} color={"grey"} />,
-      cName: "sub-nav",
-      path: "/payroll/income-tax",
-    },
-    // {
-    //   title: "Salary Generate",
-    //   icon: <MdManageHistory fontSize={15} color={"grey"} />,
-    //   cName: "sub-nav",
-    //   path: "/payroll/salaryGenerate",
-    // },
+    }
   ],
 };
 function PayrollSidebar() {

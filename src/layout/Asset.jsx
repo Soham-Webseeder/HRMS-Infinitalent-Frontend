@@ -1,16 +1,16 @@
 import React from 'react'
 import { Outlet } from "react-router-dom";
 import { Navbar } from "../components/Navbar";
-import { SidebarUpdated } from "../components/SidebarUpdated";
+import { Sidebar } from "../components/Sidebar";
 import { useSelector } from "react-redux";
-import { Sidebar } from '../components/Sidebar';
+
 const Asset = () => {
     const { sidebar } = useSelector((state) => state.sidebar);
     return (
         <div className={`flex w-full h-full  `}>
 
       <div className={` ${sidebar ? 'max-md:hidden' : ''}`}>
-      <SidebarUpdated />
+      <Sidebar />
       </div>
 
 

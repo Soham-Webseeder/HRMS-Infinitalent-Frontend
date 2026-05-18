@@ -1,229 +1,196 @@
 import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { increment, decrement } from "../../redux/slices/CounterSlice";
 import axios from "axios";
 
-export default function PositionalInformation() {
-  const [data, setData] = useState({});
+export default function PositionalInformation({ formData, setFormData, updateId }) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+  const [empExistsMessage, setEmpExistsMessage] = useState("");
 
   const dispatch = useDispatch();
-  const currentForm = useSelector((state) => state.counter);
 
-  useEffect(() => {
-    const savedFormData = localStorage.getItem("formData");
-    if (savedFormData) {
-      setData(JSON.parse(savedFormData));
-    }
-  }, []);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    localStorage.setItem("formData", JSON.stringify(data));
-    dispatch(increment());
-  };
-
-  const [divisions, setDivisions] = useState([]);
   const [designation, setDesignation] = useState([]);
   const [department, setDepartment] = useState([]);
   const [businessUnit, setBusinessUnit] = useState([]);
 
+  const token = localStorage.getItem("token");
+  const userBU = localStorage.getItem("businessUnit");
+  const SUPER_BU_ID = "697f38fac6874300915ca642";
+  const isSuperAdmin = userBU === SUPER_BU_ID;
+
   useEffect(() => {
     const fetchDivisions = async () => {
       try {
-        const responseDesignation = await axios.get(
-          `${import.meta.env.VITE_APP_BASE_URL}/company/getAllDesignations`
-        );
-        console.log(responseDesignation, "Desg");
-        setDesignation(responseDesignation.data.response);
-        const department = await axios.get(
-          `${import.meta.env.VITE_APP_BASE_URL}/company/getDepartments`
-        );
-        console.log(department);
-        setDepartment(department.data.response);
-        const businnessUnit = await axios.get(
-          `${import.meta.env.VITE_APP_BASE_URL}/company/getAllBussinessUnits`
-        );
+        // Fetch Designations
+        const resDesg = await axios.get(`${import.meta.env.VITE_APP_BASE_URL}/company/get-designations`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setDesignation(resDesg.data.response);
+      } catch (err) { console.error("Designation failed", err); }
 
-        setBusinessUnit(businnessUnit.data.response);
-      } catch (error) {
-        console.error("Error fetching divisions:", error);
-      }
+      try {
+        // Fetch Departments
+        const resDept = await axios.get(`${import.meta.env.VITE_APP_BASE_URL}/company/getDepartments`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setDepartment(resDept.data.response);
+      } catch (err) { console.error("Department failed", err); }
+
+      try {
+        // Fetch Business Units
+        const resBU = await axios.get(`${import.meta.env.VITE_APP_BASE_URL}/company/get-bussinessUnits`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (resBU.data && resBU.data.response) {
+          const fetchedBUs = resBU.data.response;
+
+          if (isSuperAdmin) {
+            setBusinessUnit(fetchedBUs);
+          } else {
+            // Find the HR's specific BU from the list
+            const myBU = fetchedBUs.find(bu => bu._id === userBU);
+            setBusinessUnit(myBU ? [myBU] : []);
+
+            // Auto-select their BU in formData if it isn't set yet
+            if (!formData.businessUnit && myBU) {
+              setFormData(prev => ({ ...prev, businessUnit: myBU._id }));
+            }
+          }
+        }
+      } catch (err) { console.error("BU failed", err); }
     };
-    fetchDivisions();
-  }, []);
+
+    if (token) {
+      fetchDivisions();
+    }
+  }, [token, isSuperAdmin, userBU, setFormData, formData.businessUnit]);
+
+  const filteredBUs = businessUnit.filter((bu) =>
+    bu.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleChange = async (e) => {
     const { name, value } = e.target;
 
-    setData((prev) => ({
+    // Update the parent state directly
+    setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
+
+    // Check uniqueness for manual Employee ID entry (only during creation)
+    if (name === "empId" && value !== "" && !updateId) {
+      try {
+        const res = await axios.get(`${import.meta.env.VITE_APP_BASE_URL}/employee/checkEmpId?empId=${value}`);
+        if (res.data.data?.exist) {
+          setEmpExistsMessage("(ID Already Taken)");
+        } else {
+          setEmpExistsMessage("");
+        }
+      } catch (err) {
+        console.error("EmpId check failed", err);
+      }
+    }
   };
 
-  console.log(data, "dataa");
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Data is already in parent state via setFormData
+    dispatch(increment());
+  };
+
   return (
     <>
-      <div className="bg-zinc-100">
-        <div className="bg-white p-5 shadow-md">
+      <div className="bg-zinc-100 ">
+        <div className="bg-gray-100 rounded-lg pl-5 pr-5">
           <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-2 gap-8 h-[60vh]">
+            <div className="grid grid-cols-2 gap-8">
+              {/* Left Column */}
               <div>
-                {/* <div className="mb-6">
-                  <label className="block mb-2 text-sm font-medium text-zinc-700">
-                    Division <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    value={data.divisionName}
-                    onChange={handleChange}
-                    required
-                    name="division"
-                  >
-                    <option value="">Select option</option>
-                    {divisions.map((division) => (
-                      <option key={division.id} value={division.id}>
-                        {division.divisionName}
-                      </option>
-                    ))}
-                  </select>
-                </div> */}
                 <div className="mb-6">
                   <label className="block mb-2 text-sm font-medium text-zinc-700">
-                    Department
-                    <span className="text-red-500">*</span>
+                    Department <span className="text-red-500">*</span>
                   </label>
                   <select
                     name="department"
-                    id=""
                     className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    value={data.department}
+                    value={formData.department || ""}
                     onChange={handleChange}
+                    required
                   >
-                    <option value=""> Select Department</option>
-                    {department.map((data) =>
-                      data && data.department && data.department.title ? (
-                        <option
-                          key={data.department.title}
-                          value={data.department.title}
-                        >
-                          {data.department.title}
+                    <option value="">Select Department</option>
+                    {department.map((item) =>
+                      item?.department?.title ? (
+                        <option key={item.department.title} value={item.department.title}>
+                          {item.department.title}
                         </option>
                       ) : null
                     )}
                   </select>
                 </div>
+
                 <div className="mb-6">
                   <label className="block mb-2 text-sm font-medium text-zinc-700">
-                    Duty Type
+                    Gross Salary <span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="text"
-                    className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Full Time"
-                    name="dutyType"
-                    value={data.dutyType}
-                    onChange={handleChange}
-                  />
-                </div>
-                {/* <div className="mb-6">
-                  <label className="block mb-2 text-sm font-medium text-zinc-700">
-                    Original Hire Date <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    onChange={handleChange}
-                    name="originalHireDate"
-                    value={data.originalHireDate}
-                    type="date"
-                    required
-                    className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div> */}
-                {/* <div className="mb-6">
-                  <label className="block mb-2 text-sm font-medium text-zinc-700">
-                    Termination Reason
-                  </label>
-                  <input
-                    onChange={handleChange}
-                    name="terminationReason"
-                    type="text"
-                    value={data.terminationReason}
-                    className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Termination Reason"
-                  />
-                </div> */}
-                <div className="mb-6">
-                  <label className="block mb-2 text-sm font-medium text-zinc-700">
-                    Rate Type <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    onChange={handleChange}
-                    name="rateType"
-                    value={data.rateType}
-                    className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    <option>Select option</option>
-                    <option>Hourly</option>
-                    <option>Salary</option>
-                  </select>
-                </div>
-                <div className="mb-6">
-                  <label className="block mb-2 text-sm font-medium text-zinc-700">
-                    Pay Frequency <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    onChange={handleChange}
-                    name="payFrequency"
-                    value={data.payFrequency}
-                    className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    <option>Select option</option>
-                    <option>Weekly</option>
-                    <option>Biweekly</option>
-                    <option>Monthly</option>
-                    <option>Annual</option>
-                  </select>
-                </div>
-                <div className="mb-6">
-                  <label className="block mb-2 text-sm font-medium text-zinc-700">
-                    Salary/CTC
-                  </label>
-                  <input
-                    type="text"
+                    type="number"
                     name="salary"
-                    value={data.salary}
+                    value={formData.salary || ""}
                     onChange={handleChange}
                     className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Anual Salary"
+                    placeholder="Monthly Salary"
+                    required
                   />
                 </div>
-                {/* <div className="mb-6">
-                  <label className="block mb-2 text-sm font-medium text-zinc-700">
-                    Hourly rate2
-                  </label>
-                  <input
-                    type="text"
-                    onChange={handleChange}
-                    name="hourlyRate2"
-                    value={data.hourlyRate2}
-                    className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Hourly Rate2"
-                  />
-                </div>
+
                 <div className="mb-6">
                   <label className="block mb-2 text-sm font-medium text-zinc-700">
-                    Home Department
+                    ESIC Number
                   </label>
                   <input
+                    type="number"
+                    name="esicNo"
+                    value={formData.esicNo || ""}
                     onChange={handleChange}
-                    name="homeDepartment"
-                    value={data.homeDepartment}
+                    className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="ESIC Registration No"
+                  />
+                </div>
+
+                <div className="mb-6">
+                  <label className="block mb-2 text-sm font-medium text-zinc-700">
+                    UAN Number
+                  </label>
+                  <input
+                    type="number"
+                    name="uanNo"
+                    value={formData.uanNo || ""}
+                    onChange={handleChange}
+                    className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="UAN Number"
+                  />
+                </div>
+
+                <div className="mb-6">
+                  <label className="block mb-2 text-sm font-medium text-zinc-700">
+                    Employee ID <span className="text-red-500">{empExistsMessage}</span>
+                  </label>
+                  <input
+                    name="empId"
+                    value={formData.empId || ""}
+                    onChange={handleChange}
                     type="text"
                     className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Home Department"
+                    placeholder="Enter Manual ID"
+                    required
                   />
-                </div> */}
+                </div>
               </div>
+
+              {/* Right Column */}
               <div>
                 <div className="mb-6">
                   <label className="block mb-2 text-sm font-medium text-zinc-700">
@@ -231,157 +198,112 @@ export default function PositionalInformation() {
                   </label>
                   <select
                     name="designation"
+                    value={formData.designation || ""}
                     onChange={handleChange}
-                    value={data.designation}
                     required
                     className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                   >
-                    <option>Select Designation</option>
-                    {designation &&
-                    Array.isArray(designation) &&
-                    designation.length > 0 ? (
-                      designation.map((designation) => (
-                        <option key={designation.id} value={designation.id}>
-                          {designation.name}
-                        </option>
-                      ))
-                    ) : (
-                      <option value="">No Designations Available</option>
-                    )}
+                    <option value="">Select Designation</option>
+                    {designation && Array.isArray(designation) && designation.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
-                <div className="mb-6">
+
+                <div className="mb-6 relative">
                   <label className="block mb-2 text-sm font-medium text-zinc-700">
                     Business Unit <span className="text-red-500">*</span>
                   </label>
-                  <select
-                    name="businessUnit"
-                    onChange={handleChange}
-                    value={data.businessUnit}
-                    required
-                    className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    <option>Select business Unit</option>
-                    {businessUnit &&
-                    Array.isArray(businessUnit) &&
-                    businessUnit.length > 0 ? (
-                      businessUnit.map((businessUnit) => (
-                        <option key={businessUnit.id} value={businessUnit._id}>
-                          {businessUnit.name}
+                  {isSuperAdmin ? (
+                    // SUPER ADMIN SEES DROPDOWN
+                    <select
+                      name="businessUnit"
+                      required
+                      value={formData.businessUnit || ""}
+                      onChange={handleChange}
+                      className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                      <option value="" disabled>Select Business Unit</option>
+                      {businessUnit.map((bu) => (
+                        <option key={bu._id} value={bu._id}>
+                          {bu.name}
                         </option>
-                      ))
-                    ) : (
-                      <option value="">No business Unit Available</option>
-                    )}
-                  </select>
+                      ))}
+                    </select>
+                  ) : (
+                    // STANDARD HR SEES READ-ONLY INPUT
+                    <input
+                      type="text"
+                      readOnly
+                      value={businessUnit.length > 0 ? businessUnit[0].name : "Loading..."}
+                      className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm bg-gray-200 text-zinc-600 cursor-not-allowed focus:outline-none font-medium"
+                    />
+                  )}
                 </div>
+
                 <div className="mb-6">
                   <label className="block mb-2 text-sm font-medium text-zinc-700">
                     Hire Date <span className="text-red-500">*</span>
                   </label>
                   <input
                     name="hireDate"
-                    onChange={handleChange}
-                    value={data.hireDate}
                     type="date"
+                    value={formData.hireDate || ""}
+                    onChange={handleChange}
                     required
                     className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-                {/* <div className="mb-6">
-                  <label className="block mb-2 text-sm font-medium text-zinc-700">
-                    Termination Date
-                  </label>
-                  <input
-                    name="terminationDate"
-                    onChange={handleChange}
-                    value={data.terminationDate}
-                    type="date"
-                    className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div> */}
-                {/* <div className="mb-6">
-                  <label className="block mb-2 text-sm font-medium text-zinc-700">
-                    Voluntary Termination
-                  </label>
-                  <select
-                    onChange={handleChange}
-                    value={data.voluntaryTermination}
-                    name="voluntaryTermination"
-                    className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  >
-                    <option>Select option</option>
-                    <option>Yes</option>
-                    <option>No</option>
-                  </select>
-                </div>
-                <div className="mb-6">
-                  <label className="block mb-2 text-sm font-medium text-zinc-700">
-                    Re Hire Date
-                  </label>
-                  <input
-                    onChange={handleChange}
-                    name="reHireDate"
-                    type="date"
-                    value={data.reHireDate}
-                    className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div> */}
-                <div className="mb-6">
-                  <label className="block mb-2 text-sm font-medium text-zinc-700">
-                    Rate <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="rate"
-                    onChange={handleChange}
-                    value={data.rate}
-                    required
-                    className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Rate"
-                  />
-                </div>
-                <div className="mb-6">
-                  <label className="block mb-2 text-sm font-medium text-zinc-700">
-                    Pay Frequency Text<span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    name="payFrequencyText"
-                    onChange={handleChange}
-                    value={data.payFrequencyText}
-                    required
-                    type="text"
-                    className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Pay Frequency Text"
                   />
                 </div>
 
                 <div className="mb-6">
                   <label className="block mb-2 text-sm font-medium text-zinc-700">
-                    Hourly Rate
+                    Employee Type
                   </label>
-                  <input
-                    type="text"
-                    name="hourlyRate"
-                    value={data.hourlyRate}
+                  <select
+                    name="employeeType"
+                    value={formData.employeeType || "ICPL"}
                     onChange={handleChange}
                     className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                    placeholder="Hourly Rate"
-                  />
+                  >
+                    <option value="ICPL">ICPL</option>
+                    <option value="ICPLOS">ICPLOS</option>
+                    <option value="ICPLNAPS">ICPLNAPS</option>
+                  </select>
+                </div>
+
+                <div className="mb-6">
+                  <label className="block mb-2 text-sm font-medium text-zinc-700">
+                    Employment Status
+                  </label>
+                  <select
+                    name="employmentStatus"
+                    value={formData.employmentStatus || "Active"}
+                    onChange={handleChange}
+                    className="mt-1 block w-full px-3 py-2 border border-zinc-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  >
+                    <option value="Active">Active</option>
+                    <option value="Terminated">Terminated</option>
+                    <option value="Resigned">Resigned</option>
+                    <option value="Notice Period">Notice Period</option>
+                  </select>
                 </div>
               </div>
             </div>
-            <div className="flex justify-between mt-8 ">
+
+            {/* Form Navigation Buttons */}
+            <div className="flex justify-between mt-8">
               <button
+                type="button"
                 onClick={() => dispatch(decrement())}
-                className="bg-zinc-300 hover:bg-zinc-400 text-zinc-800 font-bold py-2 px-4 rounded-l"
+                className="border-black mb-4 border px-6 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
               >
                 Previous
               </button>
               <button
                 type="submit"
-                // onClick={handleSubmit}
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r"
+                className="border-black mb-4 border px-8 py-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
               >
                 NEXT
               </button>

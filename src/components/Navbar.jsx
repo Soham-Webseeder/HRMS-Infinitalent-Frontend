@@ -12,7 +12,6 @@ import { setSidebar } from "../redux/slices/SidebarSlice";
 import { useDispatch, useSelector } from "react-redux";
 import ProfilePopup from "./ProfilePopup";
 import FullScreenButton from "./FullScreenBtn";
-import NotificationIcon from "./NotificationIcon";
 import logo from "../assets/Logo.jpeg";
 import UniversalSearch from "./UniversalSearch ";
 
@@ -67,7 +66,6 @@ export const Navbar = () => {
 
         {/* Right-aligned Icons */}
         <div className="flex justify-end items-center gap-4">
-          {/* <NotificationIcon /> */}
           <FullScreenButton />
           <ProfilePopup user={user.employeeAllData?.firstName} />
         </div>

@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import { RxCross2 } from "react-icons/rx";
 import { AiOutlineCheck } from "react-icons/ai";
 import { useSelector } from "react-redux";
+
 export const Address = () => {
   const states = [
     "Andhra Pradesh",

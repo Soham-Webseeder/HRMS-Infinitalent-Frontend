@@ -13,7 +13,12 @@ function BirthdayCalendar() {
     const fetchBirthdayData = async () => {
       try {
         const response = await axios.get(
-          `${import.meta.env.VITE_APP_BASE_URL}/dashboard/getDashboardData`
+          `${import.meta.env.VITE_APP_BASE_URL}/dashboard/getDashboardData`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
         );
 
         // 1. Destructure "birthdays" (matches your new backend response)

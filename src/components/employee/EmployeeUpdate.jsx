@@ -20,6 +20,8 @@ const EmployeeUpdate = () => {
   const IMG_URL = import.meta.env.VITE_APP_IMG_URL;
   const navigate = useNavigate();
 
+  const token = localStorage.getItem("token");
+
   const getDisplayUrl = (path) => {
     if (!path) return null;
     // If it's already a full URL (like from Cloudinary or an external link), return as is
@@ -40,6 +42,9 @@ const EmployeeUpdate = () => {
             limit: perPage,
             name: searchTerm,
           },
+          headers: {
+            Authorization: `Bearer ${token}` 
+          }
         }
       );
       setChangeRequests(response.data.data); // Make sure this is set correctly

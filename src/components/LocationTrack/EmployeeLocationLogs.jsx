@@ -2,6 +2,48 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { IoSearch } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
+import { MapContainer, TileLayer, Marker, Circle, useMapEvents, useMap } from "react-leaflet";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
+import markerIcon from "leaflet/dist/images/marker-icon.png";
+import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+// --- Custom Leaflet Pin Icon ---
+const simplePinIcon = new L.Icon({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+// --- Map Click Handler ---
+const MapClickHandler = ({ setGeofence }) => {
+  useMapEvents({
+    click: (e) => {
+      setGeofence((prev) => ({
+        ...prev,
+        latitude: e.latlng.lat,
+        longitude: e.latlng.lng,
+      }));
+    },
+  });
+  return null;
+};
+
+// --- Map View Updater (Pans map when searching) ---
+const MapUpdater = ({ center }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (center[0] && center[1]) {
+      map.setView(center, 15);
+    }
+  }, [center, map]);
+  return null;
+};
 
 const EmployeeLocationLogs = () => {
   const [employees, setEmployees] = useState([]);
@@ -11,19 +53,32 @@ const EmployeeLocationLogs = () => {
   const [totalEmployees, setTotalEmployees] = useState(0);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-  const [geofence, setGeofence] = useState({ latitude: "", longitude: "", radius: "" });
+  
+  // Geofence & Map State
+  const [geofence, setGeofence] = useState({ latitude: "", longitude: "", radius: 100 });
+  const [locationSearch, setLocationSearch] = useState("");
+  
   const [limit, setLimit] = useState(5);
   const navigate = useNavigate();
+
+  const token = localStorage.getItem("token");
 
   const fetchEmployees = async () => {
     try {
       const response = await axios.get(
         `${import.meta.env.VITE_APP_BASE_URL}/employee/getAllEmployees`,
         {
-          params: { page: currentPage, limit: limit, name: searchQuery }
+          params: { page: currentPage, limit: limit, name: searchQuery },
+          headers: { Authorization: `Bearer ${token}` } // Automatically applies BU filtering in backend
         }
       );
-      setEmployees(response.data?.data || []);
+      
+      // Explicitly filter out HRs and Admins from the tracking list
+      const filteredList = (response.data?.data || []).filter(
+        emp => emp.role !== "hr" && emp.role !== "admin"
+      );
+
+      setEmployees(filteredList);
       setTotalPages(response.data?.pagination?.totalPages || 1);
       setTotalEmployees(response.data?.pagination?.totalEmployees || 0);
     } catch (err) {
@@ -33,181 +88,263 @@ const EmployeeLocationLogs = () => {
 
   useEffect(() => {
     fetchEmployees();
-  }, [currentPage, searchQuery, limit]);
+  }, [currentPage, limit, searchQuery]);
 
-  const openModal = (emp) => {
-    setSelectedEmployee(emp);
-    // Extract existing data (geofenceCenter is [longitude, latitude] in MongoDB)
-    const existingCenter = emp.geofenceCenter;
-    const existingRadius = emp.geofenceRadius;
+  // --- Location Search (Geocoding via OpenStreetMap) ---
+  const handleMapSearch = async () => {
+    if (!locationSearch.trim()) return;
+    try {
+      const res = await axios.get(`https://nominatim.openstreetmap.org/search?format=json&q=${locationSearch}`);
+      if (res.data && res.data.length > 0) {
+        const { lat, lon } = res.data[0];
+        setGeofence(prev => ({
+          ...prev,
+          latitude: parseFloat(lat),
+          longitude: parseFloat(lon)
+        }));
+      } else {
+        alert("Location not found. Try a broader search (e.g., 'City Name').");
+      }
+    } catch (err) {
+      console.error("Search failed", err);
+    }
+  };
 
-    // Initialize geofence state using existing data, defaulting to empty strings
+  const handleOpenGeofenceModal = (employee) => {
+    setSelectedEmployee(employee);
     setGeofence({
-      // MongoDB stores coordinates as [longitude, latitude]
-      longitude: existingCenter && existingCenter[0] !== undefined ? existingCenter[0] : "",
-      latitude: existingCenter && existingCenter[1] !== undefined ? existingCenter[1] : "",
-      radius: existingRadius !== undefined ? existingRadius : ""
+      longitude: employee.geofenceCenter?.[0] || "",
+      latitude: employee.geofenceCenter?.[1] || "",
+      radius: employee.geofenceRadius || 100,
     });
+    setLocationSearch("");
     setModalOpen(true);
   };
 
   const handleGeofenceChange = (e) => {
-    const { name, value } = e.target;
-    setGeofence(prev => ({ ...prev, [name]: value }));
+    setGeofence({ ...geofence, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async () => {
+    if (!geofence.latitude || !geofence.longitude || !geofence.radius) {
+      alert("Please set a location and radius.");
+      return;
+    }
     try {
-      const { longitude, latitude, radius } = geofence;
-      const center = [parseFloat(longitude), parseFloat(latitude)];
-      await axios.post(`${import.meta.env.VITE_APP_BASE_URL}/company/createEmployeeGeofence/${selectedEmployee._id}`, {
-        center,
-        radius: parseFloat(radius),
-      });
-      alert("Geofence updated successfully");
+      await axios.put(
+        `${import.meta.env.VITE_APP_BASE_URL}/company/createEmployeeGeofence/${selectedEmployee._id}`,
+        {
+          center: [Number(geofence.longitude), Number(geofence.latitude)],
+          radius: Number(geofence.radius),
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       setModalOpen(false);
+      fetchEmployees();
     } catch (err) {
       console.error("Failed to update geofence", err);
-      alert("Failed to update geofence");
     }
   };
 
+  const handleClearGeofence = async () => {
+    const confirmClear = window.confirm("Are you sure you want to remove the geofence for this employee?");
+    if (!confirmClear) return;
+
+    try {
+      await axios.put(
+        `${import.meta.env.VITE_APP_BASE_URL}/company/createEmployeeGeofence/${selectedEmployee._id}`,
+        {
+          center: [0, 0], // Dummy coordinates
+          radius: 0,      // Radius 0 disables the check
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setModalOpen(false);
+      fetchEmployees();
+    } catch (err) {
+      console.error("Failed to clear geofence", err);
+    }
+  };
+
+  const mapCenter = geofence.latitude && geofence.longitude 
+    ? [geofence.latitude, geofence.longitude] 
+    : [20.5937, 78.9629]; // Default to India Center if no geofence exists
+
   return (
-    <div className="flex flex-col px-6 py-2 space-y-2 rounded-lg shadow bg-white">
-      <div className="flex flex-col gap-2 border-b border-gray-300 py-2">
-        <div className="text-2xl font-medium">Employee Location Logs</div>
+    <div className="p-6 bg-white min-h-screen">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-semibold">Employee Geofence Tracking</h1>
+        <div className="relative">
+          <IoSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search employee..."
+            className="pl-10 pr-4 py-2 border rounded-md"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
+        </div>
       </div>
 
-      <div className="bg-white p-4 rounded-lg shadow-lg w-full mx-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold text-gray-800">Employee List</h1>
-          <div className="flex items-center gap-4">
-            <div className="flex w-fit border-2 border-gray-300 rounded-full bg-white items-center hover:border-blue-500">
-              <input
-                type="text"
-                placeholder="Search employee..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="px-4 py-1 border border-gray-300 rounded-full text-sm font-normal focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10"
-              />
-              <IoSearch size={25} className="cursor-pointer hover:bg-gray-100 active:bg-gray-200 rounded-full p-1 text-gray-500" />
-            </div>
-            <select
-              value={limit}
-              onChange={(e) => {
-                setLimit(parseInt(e.target.value));
-                setCurrentPage(1); // reset page on limit change
-              }}
-              className="border border-gray-300 text-sm rounded px-2 py-1"
-            >
-              <option value={5}>5 / page</option>
-              <option value={10}>10 / page</option>
-              <option value={25}>25 / page</option>
-              <option value={50}>50 / page</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="min-w-full border-separate border-spacing-y-2">
-            <thead className="bg-slate-100">
-              <tr>
-                <th className="p-2 text-left font-medium">Name</th>
-                <th className="p-2 text-left font-medium">Email</th>
-                <th className="p-2 text-left font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {employees.map((emp) => (
-                <tr key={emp._id} className="hover:bg-gray-50">
-                  <td className="p-2">{emp.firstName} {emp.lastName}</td>
-                  <td className="p-2">{emp.email}</td>
-                  <td className="p-2 flex gap-2">
+      <div className="overflow-x-auto shadow-md sm:rounded-lg">
+        <table className="w-full text-sm text-left text-gray-500">
+          <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+            <tr>
+              <th className="px-6 py-3">Name</th>
+              <th className="px-6 py-3">Email</th>
+              <th className="px-6 py-3">Geofence Status</th>
+              <th className="px-6 py-3">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {employees.map((emp) => {
+              const hasGeofence = emp.geofenceRadius && emp.geofenceRadius > 0;
+              return (
+                <tr key={emp._id} className="bg-white border-b hover:bg-gray-50">
+                  <td className="px-6 py-4 font-medium text-gray-900">
+                    {emp.firstName} {emp.lastName}
+                  </td>
+                  <td className="px-6 py-4">{emp.email}</td>
+                  <td className="px-6 py-4">
+                    {hasGeofence ? (
+                      <span className="text-green-600 font-medium">Active ({emp.geofenceRadius}m)</span>
+                    ) : (
+                      <span className="text-gray-400 font-medium">None</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 flex gap-3">
                     <button
                       onClick={() => navigate(`/app/location-tracking/map/${emp._id}`)}
-                      className="text-blue-600 hover:text-blue-800 font-medium"
+                      className="text-blue-600 hover:underline"
                     >
-                      View Locations
+                      View Logs
                     </button>
                     <button
-                      onClick={() => openModal(emp)}
-                      className="text-green-600 hover:text-green-800 font-medium"
+                      onClick={() => handleOpenGeofenceModal(emp)}
+                      className="text-indigo-600 hover:underline border-l pl-3 ml-1"
                     >
-                      Update Geofence
+                      Set Geofence
                     </button>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {employees.length === 0 && (
-            <div className="text-center py-4 text-gray-500">No employees found</div>
-          )}
-        </div>
-
-        {/* Pagination Controls */}
-        <div className="flex justify-between items-center mt-4">
-          <span className="text-sm text-gray-600">
-            Showing {(currentPage - 1) * limit + 1} to {Math.min(currentPage * limit, totalEmployees)} of {totalEmployees} entries
-          </span>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
-              className="px-4 py-2 border rounded-md hover:bg-gray-100 disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-              disabled={currentPage === totalPages}
-              className="px-4 py-2 border rounded-md hover:bg-gray-100 disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
+              );
+            })}
+          </tbody>
+        </table>
+        
+        {/* Pagination Details */}
+        <div className="p-4 flex justify-between items-center text-sm text-gray-600 border-t">
+            <span>Showing Page {currentPage} of {totalPages}</span>
+            <div className="flex gap-2">
+                <button 
+                  disabled={currentPage === 1} 
+                  onClick={() => setCurrentPage(p => p - 1)}
+                  className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                >Prev</button>
+                <button 
+                  disabled={currentPage === totalPages} 
+                  onClick={() => setCurrentPage(p => p + 1)}
+                  className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+                >Next</button>
+            </div>
         </div>
       </div>
 
       {/* Geofence Modal */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-30 flex justify-center items-center">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-[400px]">
-            <h2 className="text-lg font-bold mb-4">Update Geofence for {selectedEmployee?.firstName}</h2>
-            <div className="flex flex-col gap-3">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-6 rounded-lg w-full max-w-4xl shadow-xl flex flex-col gap-4">
+            <h2 className="text-xl font-semibold">
+              Configure Geofence for {selectedEmployee?.firstName} {selectedEmployee?.lastName}
+            </h2>
+
+            {/* Location Search Bar */}
+            <div className="flex gap-2">
               <input
-                type="number"
-                name="longitude"
-                value={geofence.longitude}
-                onChange={handleGeofenceChange}
-                placeholder="Longitude"
-                className="border px-3 py-2 rounded-md"
+                type="text"
+                placeholder="Search a city, area, or address..."
+                value={locationSearch}
+                onChange={(e) => setLocationSearch(e.target.value)}
+                className="border px-3 py-2 rounded-md flex-grow focus:outline-none focus:border-blue-500"
+                onKeyDown={(e) => e.key === 'Enter' && handleMapSearch()}
               />
-              <input
-                type="number"
-                name="latitude"
-                value={geofence.latitude}
-                onChange={handleGeofenceChange}
-                placeholder="Latitude"
-                className="border px-3 py-2 rounded-md"
-              />
-              <input
-                type="number"
-                name="radius"
-                value={geofence.radius}
-                onChange={handleGeofenceChange}
-                placeholder="Radius in meters"
-                className="border px-3 py-2 rounded-md"
-              />
-              <div className="flex justify-end gap-3 mt-2">
-                <button onClick={() => setModalOpen(false)} className="text-gray-600 hover:underline">
+              <button 
+                onClick={handleMapSearch} 
+                className="bg-blue-100 text-blue-700 px-4 py-2 rounded-md hover:bg-blue-200 font-medium"
+              >
+                Search
+              </button>
+            </div>
+
+            <div className="text-sm text-gray-500 italic">
+              * Click anywhere on the map to place the center pin for this employee's geofence.
+            </div>
+
+            {/* Interactive Map Area */}
+            <div className="w-full h-80 rounded-md overflow-hidden border">
+              <MapContainer 
+                center={mapCenter} 
+                zoom={10} 
+                scrollWheelZoom={true} 
+                style={{ height: "100%", width: "100%" }}
+              >
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <MapUpdater center={mapCenter} />
+                <MapClickHandler setGeofence={setGeofence} />
+                
+                {geofence.latitude && geofence.longitude && (
+                  <>
+                    <Marker position={[geofence.latitude, geofence.longitude]} icon={simplePinIcon} />
+                    <Circle 
+                      center={[geofence.latitude, geofence.longitude]} 
+                      radius={Number(geofence.radius) || 0}
+                      pathOptions={{ color: 'blue', fillColor: 'blue', fillOpacity: 0.2 }}
+                    />
+                  </>
+                )}
+              </MapContainer>
+            </div>
+
+            {/* Radius and Actions */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mt-2">
+              <div className="flex flex-col w-full md:w-1/3">
+                <label className="text-sm font-medium text-gray-700 mb-1">Geofence Radius (Meters)</label>
+                <input
+                  type="number"
+                  name="radius"
+                  value={geofence.radius}
+                  onChange={handleGeofenceChange}
+                  min="10"
+                  className="border px-3 py-2 rounded-md focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 w-full md:w-auto">
+                <button 
+                  onClick={handleClearGeofence} 
+                  className="text-red-600 border border-red-200 bg-red-50 px-4 py-2 rounded-md hover:bg-red-100 font-medium"
+                  title="Removes the geofence logic for this employee"
+                >
+                  Clear Geofence
+                </button>
+                <button 
+                  onClick={() => setModalOpen(false)} 
+                  className="text-gray-600 bg-gray-100 border border-gray-200 px-4 py-2 rounded-md hover:bg-gray-200"
+                >
                   Cancel
                 </button>
-                <button onClick={handleSubmit} className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-                  Save
+                <button 
+                  onClick={handleSubmit} 
+                  className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 font-medium shadow-sm"
+                >
+                  Save Map Geofence
                 </button>
               </div>
             </div>
+
           </div>
         </div>
       )}

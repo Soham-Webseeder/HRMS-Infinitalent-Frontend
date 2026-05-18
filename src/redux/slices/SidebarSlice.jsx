@@ -23,14 +23,10 @@ export const SidebarSlice = createSlice({
     setModal: (state,action)=>{
       state.editEmployeeModal = action.payload
     },
-    setCandidateModal:(state,action)=>{
-      state.editCandidateModal = action.payload
-    }
-
   },
 });
 
-export const { setSidebar, setSecondSidebar, setShowLeaveModal,setModal,setCandidateModal } =
+export const { setSidebar, setSecondSidebar, setShowLeaveModal,setModal } =
   SidebarSlice.actions;
 
 export default SidebarSlice.reducer;

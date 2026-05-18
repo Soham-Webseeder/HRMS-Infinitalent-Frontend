@@ -1,12 +1,11 @@
 import { AiFillEye } from "react-icons/ai";
 import axios from "axios";
 import { useEffect, useState } from "react";
-import AddEmployee from "./AddEmployee";
+import AddEmployee from "../employee/AddEmployee";
 import { useDispatch, useSelector } from "react-redux";
 import { setModal } from "../../redux/slices/SidebarSlice";
 import { FaEdit, FaEye } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
-import AddEmployee2 from "../employeeComponents/AddEmployee2";
 import ExcelExport from "../ExcelExport";
 import EmployeeImport from "../EmployeeImport";
 import toast from "react-hot-toast";
@@ -22,7 +21,7 @@ export default function ManageExEmployee() {
   const [empDetails, setEmpDetails] = useState({});
   const [showModel, setShowModel] = useState(false);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
-  const [showAddEmployee2, setShowAddEmployee2] = useState(false);
+  const [showAddEmployee, setShowAddEmployee] = useState(false);
   const [statusOptions, setStatusOptions] = useState([
     "Active",
     "Terminated",
@@ -209,8 +208,8 @@ export default function ManageExEmployee() {
           updateId={updateId}
           setUpdateId={setUpdateId}
         />
-      ) : showAddEmployee2 ? (
-        <AddEmployee2 onClose={() => setShowAddEmployee2(false)} />
+      ) : showAddEmployee ? (
+        <AddEmployee onClose={() => setShowAddEmployee(false)} />
       ) : (
         <div className="p-4 md:p-6 lg:p-8">
           <h1 className=" text-xl md:text-2xl font-bold mb-2">

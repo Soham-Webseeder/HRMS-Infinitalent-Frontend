@@ -6,17 +6,23 @@ import DashboardStats from "./Hero";
 import PunchStatus from "./PunchStatus";
 import AttendanceCard from "./AttendanceCard";
 import LeaveRequests from "./LeaveRequest";
-import Notifications from "./Notification";
 import axios from "axios";
 
 const Dashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
+  
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
+        const token = localStorage.getItem("token");
         const response = await axios.get(
-          `${import.meta.env.VITE_APP_BASE_URL}/dashboard/getDashboardData`
+          `${import.meta.env.VITE_APP_BASE_URL}/dashboard/getDashboardData`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
         );
         setDashboardData(response.data);
         console.log(response.data, "Dashboard");
@@ -48,7 +54,6 @@ const Dashboard = () => {
           <Calendar />
           <BirthdayCalendar />
           <WorkAnniversary />
-          {/* <Notifications /> */}
         </div>
         <div className="col-span-1 flex justify-start items-center flex-col w-full rounded-md">
           <AttendanceCard leaveCounts={dashboardData?.leaveCounts} />

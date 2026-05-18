@@ -1,40 +1,59 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { FaEdit, FaCalendarAlt } from "react-icons/fa";
+import { FaStar, FaEdit, FaCalendarAlt } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
 import { RxCross2 } from "react-icons/rx";
+import { Link } from "react-router-dom";
+import Modal from "./Modal";
+import AddEmployeePerformance from "./AddEmployeePerformance";
 
-const ManageEmployeePerformance = () => {
+const NewManageEmployeePerformance = () => {
   const [performance, setPerformance] = useState([]);
   const [employees, setEmployees] = useState([]);
-  const [perPage, setPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const [openIndex, setOpenIndex] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [modalData, setModalData] = useState({});
   const [itemId, setItemId] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [totalEmpPerformance, setTotalEmpPerformance] = useState(0);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editData, setEditData] = useState({});
   const [calendarData, setCalendarData] = useState({});
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage, setPerPage] = useState(5);
+  const [totalPages, setTotalPages] = useState(1);
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth || "");
+  const [isSearchActive, setIsSearchActive] = useState(false);
 
   const handleOpen = (index) => {
     setOpenIndex(openIndex === index ? null : index);
   };
 
   const handleDelete = async (id) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this item?");
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this item?"
+    );
     if (confirmDelete) {
       try {
-        const response = await axios.delete(`${import.meta.env.VITE_APP_BASE_URL}/employee/deleteEmpPerformance/${id}`);
+        const response = await axios.delete(
+          `${import.meta.env.VITE_APP_BASE_URL
+          }/employee/deleteEmpPerformance/${id}`
+        );
         if (response.data.success) {
-          const updatedPerformance = performance.filter(emp => emp._id !== id);
+          const updatedPerformance = performance.filter(
+            (emp) => emp._id !== id
+          );
           setPerformance(updatedPerformance);
           toast.success("Employee Performance Deleted Successfully");
         } else {
-          console.error("Error deleting Employee Performance:", response.data.message);
+          console.error(
+            "Error deleting Employee Performance:",
+            response.data.message
+          );
         }
       } catch (error) {
         console.error("Error deleting Employee Performance:", error);
@@ -48,79 +67,58 @@ const ManageEmployeePerformance = () => {
   };
 
   const handleEditClick = (id) => {
-    const selectedPerformance = performance.find(perf => perf._id === id);
-    setModalData(selectedPerformance);
+    const selectedPerformance = performance.find((perf) => perf._id === id);
+    setEditData(selectedPerformance);
     setItemId(id);
-    setShowModal(true);
+    setShowEditModal(true);
   };
 
-  const handleEdit = async () => {
+  const handleEdit = async (e) => {
+    e.preventDefault();
     try {
-      const res = await axios.patch(`${import.meta.env.VITE_APP_BASE_URL}/employee/updateEmpPerformance/${itemId}`, modalData);
+      console.log("Sending edit data:", editData);
+      const res = await axios.patch(
+        `${import.meta.env.VITE_APP_BASE_URL
+        }/employee/updateEmpPerformance/${itemId}`,
+        editData
+      );
       if (res.data.success) {
         toast.success("Employee Performance Edited Successfully");
-        setShowModal(false);
-        const updatedPerformance = performance.map(perf =>
-          perf._id === itemId ? { ...perf, ...modalData } : perf
-        );
-        setPerformance(updatedPerformance);
+        setShowEditModal(false);
+        fetchPerformanceData();
       } else {
-        toast.error("Employee Performance Edit Unsuccessful");
+        toast.error(
+          `Edit Unsuccessful: ${res.data.message || "Unknown error"}`
+        );
       }
     } catch (error) {
       console.error("Error editing Employee Performance:", error);
-      toast.error("Employee Performance Edit Unsuccessful");
-    }
-  };
-
-  const handleCalendarClick = (id) => {
-    setCalendarData({
-      ...performance.find(perf => perf._id === id),
-      id
-    });
-    setShowCalendarModal(true);
-  };
-
-  const handleCalendarInputChange = (e) => {
-    setCalendarData({
-      ...calendarData,
-      year: e.target.value
-    });
-  };
-
-  const handleCalendarSave = async () => {
-    try {
-      await axios.patch(`${import.meta.env.VITE_APP_BASE_URL}/employee/updateEmpPerformance/${calendarData._id}`, {
-        year: calendarData.year,
-      });
-      toast.success("Date Updated Successfully");
-      setShowCalendarModal(false);
-      const updatedPerformance = performance.map(perf =>
-        perf._id === calendarData._id ? { ...perf, year: calendarData.year } : perf
+      toast.error(
+        `Edit Failed: ${error.response?.data?.message || error.message}`
       );
-      setPerformance(updatedPerformance);
-    } catch (error) {
-      console.error("Error saving calendar date:", error);
-      toast.error("Error updating date");
     }
   };
 
-  const fetchEmployeeData = async (search = "") => {
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
+
+  const fetchEmployeeData = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_APP_BASE_URL}/employee/getAllEmployees`, {
-        params: {
-          page: currentPage,
-          limit: perPage,
-          search: search,
-        },
-      });
-      console.log('Employee Data:', response.data);
-      setEmployees(response.data.data);
-      // if (response.data.success) {
-      //   setEmployees(response.data.data);
-      // } else {
-      //   console.error("Error fetching employees:", response.data.message);
-      // }
+      const response = await axios.get(
+        `${import.meta.env.VITE_APP_BASE_URL}/employee/getAllEmployees`
+      );
+
+      if (response.data.success) {
+        setEmployees(response.data.data);
+        setTotalEmpPerformance(response.data.pagination.totalEmpPerformance);
+      } else {
+        console.error("Error fetching employees:", response.data.message);
+      }
     } catch (error) {
       console.error("Error fetching employees:", error);
     }
@@ -128,30 +126,48 @@ const ManageEmployeePerformance = () => {
 
   const fetchPerformanceData = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_APP_BASE_URL}/employee/getAllEmpPerformance`, {
-        params: {
-          page: currentPage,
-          limit: perPage,
-        },
-      });
-      console.log('Performance Data:', response.data);
+      const response = await axios.get(
+        `${import.meta.env.VITE_APP_BASE_URL
+        }/employee/getAllEmpPerformanceByMonthAndYear`,
+        {
+          params: {
+            page: isSearchActive ? 1 : currentPage, // When search is active, ignore pagination and reset to page 1
+            limit: isSearchActive ? totalEmpPerformance : perPage, // If search is active, fetch all data
+            month: selectedMonth.split("-")[1],
+            year: selectedMonth.split("-")[0],
+          },
+        }
+      );
+
       if (response.data.success) {
         setPerformance(response.data.data);
         setTotalPages(response.data.pagination.totalPages);
         setTotalEmpPerformance(response.data.pagination.totalEmpPerformance);
-        toast.success("Employee Performance Fetched Successfully");
+
+        if (!isSearchActive) {
+          toast.success("Employee Performance Fetched Successfully");
+        }
       } else {
-        console.error("Error Fetching Employee Performance:", response.data.message);
+        console.error(
+          "Error Fetching Employee Performance:",
+          response.data.message
+        );
+        setTotalPages(0);
+        setPerformance([]);
+        setTotalEmpPerformance(0);
       }
     } catch (error) {
       console.error("Error Fetching Employee Performance:", error);
+      setTotalPages(0);
+      setPerformance([]);
+      setTotalEmpPerformance(0);
     }
   };
 
   useEffect(() => {
-    fetchEmployeeData(searchTerm);
+    fetchEmployeeData();
     fetchPerformanceData();
-  }, [currentPage, perPage, searchTerm]);
+  }, [currentPage, perPage, searchTerm, selectedMonth]);
 
   const handlePerPageChange = (e) => {
     setPerPage(parseInt(e.target.value, 10));
@@ -159,138 +175,259 @@ const ManageEmployeePerformance = () => {
   };
 
   const handlePageChange = (page) => {
-    setCurrentPage(page);
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
   };
 
-  const filteredPerformance = performance.filter(emp =>
-    emp.employeeName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  console.log('Filtered Performance:', filteredPerformance);
+  const handlePreviousPage = () => {
+    setCurrentPage((prev) => Math.max(prev - 1, 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  };
+
+  const filteredPerformance = performance.filter((emp) => {
+    if (typeof emp.employeeName === "string") {
+      const nameMatch = emp.employeeName
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
+
+      const createdAtDate = new Date(emp.createdAt);
+      const empDate = `${createdAtDate.getFullYear()}-${String(
+        createdAtDate.getMonth() + 1
+      ).padStart(2, "0")}`;
+
+      const monthMatch = selectedMonth ? empDate === selectedMonth : true;
+
+      return nameMatch && monthMatch;
+    } else {
+      console.warn("Invalid employeeName:", emp.employeeName);
+      return false;
+    }
+  });
+
+  console.log("Filtered Performance:", filteredPerformance);
+  console.log("Performance:", performance);
+
+  const clearSearch = () => {
+    setSearchTerm("");
+    setIsSearchActive(false);
+    fetchPerformanceData(); // Re-fetch data with default pagination
+  };
+
+  const toggleModal = () => {
+    setShowModal(!showModal);
+    setIsModalOpen(!isModalOpen);
+    if (!isModalOpen) {
+      setItemId(""); // Clear the item ID when opening the modal for adding new asset type
+      setModalData({ typeName: "" }); // Reset modal data
+    }
+  };
+
+  const handleSearch = (e) => {
+    const term = e.target.value;
+    setSearchTerm(term);
+
+    // Enable search mode
+    if (term.trim() !== "") {
+      setIsSearchActive(true);
+    } else {
+      setIsSearchActive(false);
+    }
+  };
 
   return (
     <>
-      <div className="bg-gray-100 min-h-screen sm:px-4 md:px-24 py-2 overflow-x-hidden flex flex-col w-full mx-auto">
-          <h1 className="text-2xl bg-white font-semibold mb-4 p-1 rounded-full shadow-lg w-full text-center ">
-            Manage Employee Performance
-          </h1>
-        <div className="container mx-auto bg-white p-4 shadow rounded overflow-x-auto">
-          <div className="border rounded px-4 py-4">
-            <div className="flex space-x-2 justify-between">
-              <div className="relative">
-                <label className="mr-2 text-sm">Show:</label>
-                <select
-                  onChange={handlePerPageChange}
-                  value={perPage}
-                  className="border rounded-full py-1 px-2 text-sm"
-                >
-                  {[5, 10, 15, 20].map(size => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
-                <span className="text-sm ml-2">entries</span>
-              </div>
-              <div className="flex">
-                <span className="self-center font-bold mr-2">Search:</span>
+      <div className=" md:p-6 lg:p-8 bg-white  p-4 w-full">
+        <h1 className=" text-xl md:text-2xl font-bold ">Employee</h1>
+        <div className="flex justify-between items-center">
+          {/* Navigation Links */}
+          <div className="flex text-sm text-gray-500">
+            <Link
+              to="/"
+              className="pr-1 border-r-2 border-gray-400 flex justify-center items-center h-4"
+            >
+              Home
+            </Link>
+            <Link
+              to="/app/employee"
+              className="px-1 border-r-2 border-gray-400 flex justify-center items-center h-4"
+            >
+              Employee
+            </Link>
+            <Link className="px-1 flex justify-center items-center h-4">
+              Manage Employee Performance
+            </Link>
+          </div>
+
+          {/* Export Button */}
+          <button
+            className="float-right text-white border-black rounded-full bg-blue-600 px-8 py-1  hover:bg-blue-700 active:bg-white shadow shadow-gray-500"
+            onClick={toggleModal}
+          >
+            Add Employee Performance
+          </button>
+        </div>
+
+        <Modal isOpen={showModal} onClose={toggleModal}>
+          <AddEmployeePerformance setShowModal={setShowModal} />
+        </Modal>
+        <hr className="mb-4 mt-4 border-t-2 border-gray-300" />
+        <div className="border rounded px-4 py-4 bg-gray-100">
+          <div className="flex justify-between items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <div className="relative flex items-center">
                 <input
                   type="text"
-                  placeholder="Search by Employee Performance"
+                  placeholder="Search"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  onChange={handleSearch}
+                  className="px-4 py-1 border border-gray-300 rounded-full text-sm font-normal focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 pr-10"
                 />
+
+                <svg
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-5 text-gray-500"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
               </div>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="month"
+                id="date"
+                name="date"
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="border-2 border-gray-300 rounded-md py-0.5 pl-2 outline-none focus:border-blue-400 w-25% "
+              />
             </div>
           </div>
 
-          <table className="min-w-full divide-y divide-gray-200 border-collapse border border-slate-400">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-sm font-medium text-gray-500 uppercase tracking-wider border border-slate-300 text-left w-[3%]">SL</th>
-                <th className="px-4 py-3 text-sm font-medium text-gray-500 uppercase tracking-wider border border-slate-300 text-left w-[6%]">First Name</th>
-                <th className="px-4 py-3 text-sm font-medium text-gray-500 uppercase tracking-wider border border-slate-300 text-left w-[6%]">Last Name</th>
-                <th className="px-4 py-3 text-sm font-medium text-gray-500 uppercase tracking-wider border border-slate-300 text-left w-[6%]">Employee Id</th>
-                <th className="px-4 py-3 text-sm font-medium text-gray-500 uppercase tracking-wider border border-slate-300 text-left w-[6%]">Note</th>
-                <th className="px-4 py-3 text-sm font-medium text-gray-500 uppercase tracking-wider border border-slate-300 text-left w-[10%]">Number Of Stars</th>
-                <th className="px-4 py-3 text-sm font-medium text-gray-500 uppercase tracking-wider border border-slate-300 text-left w-[6%]">Month & Year</th>
-                <th className="px-4 py-3 text-sm font-medium text-gray-500 uppercase tracking-wider border border-slate-300 text-left w-[3%]">Action</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {employees.map((data, index) => {
-                const employee = employees.find(emp => emp._id === data.empId.toString()) || {};
-                return (
-                  <tr key={data._id}>
-                    <td className="px-4 py-4 whitespace-nowrap border border-slate-300">
-                      {index + 1}
-                    </td>
-                    <td className="px-2 py-1 whitespace-nowrap border border-slate-300">
-                      {data.firstName}
-                    </td>
-                    <td className="px-2 py-1 whitespace-nowrap border border-slate-300">
-                      {data.lastName}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap border border-slate-300">
-                      {data.empId}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap border border-slate-300">
-                      {data.note}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap border border-slate-300">
-                      {data.numberOfStar}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap border border-slate-300">
-                      {data.year}
-                    </td>
-                    <td className="whitespace-nowrap text-left text-sm font-medium flex p-1">
-                      <div className="w-[33%] border-slate-300 py-3 text-center">
-                        <button
-                          onClick={() => handleEditClick(data._id)}
-                          className="text-indigo-500 hover:text-indigo-900 mr-2"
-                        >
-                          <FaEdit size={20} />
-                        </button>
-                      </div>
-                      <div className="w-[33%] border-l border-slate-300 py-3 text-center">
-                        <button
-                          onClick={() => handleDelete(data._id)}
-                          className="text-red-500 hover:text-red-900 mr-2"
-                        >
-                          <MdDelete size={20} />
-                        </button>
-                      </div>
-                      <div className="w-[33%] border-l border-slate-300 py-3 text-center">
-                        <button
-                          onClick={() => handleCalendarClick(data._id)}
-                          className="text-green-500 hover:text-green-900"
-                        >
-                          <FaCalendarAlt size={18} />
-                        </button>
-                      </div>
+          <div className="overflow-x-auto w-full bg-gray-100">
+            <div className="py-4">
+              <table className="min-w-full border-separate border-spacing-y-3 bg-gray-100">
+                <thead>
+                  <tr className="text-sm font-medium text-black">
+                    <th className="pl-1 text-left whitespace-nowrap">
+                      Employee Id
+                    </th>
+                    <th className="pl-10 text-left whitespace-nowrap">
+                      Employee Name
+                    </th>
+                    <th className="pl-6 text-left whitespace-nowrap">Note</th>
+                    <th className=" text-center whitespace-nowrap">
+                      Number Of Stars
+                    </th>
+                    <th className="pl-15 pr-8 text-end whitespace-nowrap">
+                      Action
+                    </th>{" "}
+                    {/* Adjusted alignment */}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="bg-transparent py-0" colSpan="100%">
+                      <hr className="w-full bg-gray-300 h-0.5 my-0" />
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                  {filteredPerformance
+                    .sort((a, b) => a.empId - b.empId)
+                    .map((data) => (
+                      <tr
+                        key={data._id}
+                        className="text-gray-600 text-left w-full bg-white border border-black rounded-lg"
+                      >
+                        <td className="pl-2 whitespace-nowrap bg-white border-y-2 border-l-2 rounded-l-md text-sm">
+                          {data.empId}
+                        </td>
+                        <td className="pl-12 whitespace-nowrap bg-white border-y-2 text-sm">
+                          {data.employeeName}
+                        </td>
+                        <td className="px-6 whitespace-nowrap bg-white border-y-2 text-sm">
+                          {data.note}
+                        </td>
+                        <td className="px-6 whitespace-nowrap bg-white border-y-2 text-sm">
+                          <div className="flex flex-col items-center">
+                            <div className="flex items-center">
+                              {Array.from(
+                                { length: data.numberOfStar },
+                                (_, index) => (
+                                  <FaStar
+                                    key={index}
+                                    className="text-yellow-500 inline-block"
+                                  />
+                                )
+                              )}
+                            </div>
+                          </div>
+                        </td>
 
-          <div className="flex justify-end mt-4 space-x-2">
+                        <td className="w-25 whitespace-nowrap flex justify-end items-center bg-white border-y-2 rounded-r-md border-r-2 py-2.5 gap-2">
+                          <button
+                            onClick={() => handleEditClick(data._id)}
+                            className="text-gray-500 hover:text-gray-900 active:text-gray-500 cursor-pointer mr-2"
+                            aria-label="Edit"
+                          >
+                            <FaEdit size={18} />
+                          </button>
+                          {/* <button
+                            onClick={() => handleCalendarClick(data._id)}
+                            className="text-gray-500 hover:text-gray-900 active:text-gray-500 cursor-pointer mr-2"
+                            aria-label="Calendar"
+                          >
+                            <FaCalendarAlt size={15} />
+                          </button> */}
+                          <button
+                            onClick={() => handleDelete(data._id)}
+                            className="text-gray-500 hover:text-gray-900 active:text-gray-500 cursor-pointer mr-2"
+                            aria-label="Delete"
+                          >
+                            <MdDelete size={18} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          {/* 
+          <div className="flex justify-center mt-4 space-x-2">
+            <button
+              onClick={() => handlePageChange(1)}
+              disabled={currentPage === 1}
+              className="px-4 py-2  bg-blue-800 text-white border border-gray-300 rounded-full"
+            >
+              &laquo;
+            </button>
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="px-4 py-2 border border-gray-300 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-4 py-2  bg-blue-800 text-white border border-gray-300 rounded-full"
             >
-              Previous
+              &lt;
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
               <button
                 key={page}
                 onClick={() => handlePageChange(page)}
-                className={`px-4 py-2 ${currentPage === page
-                  ? "bg-blue-600 border rounded-full text-white"
-                  : "border border-gray-300 rounded-full hover:bg-gray-100"
-                  }`}
+                className={`px-4 py-2 border rounded-full ${
+                  currentPage === page
+                    ? "text-blue-500 bg-white border-blue-500"
+                    : "text-gray-700 border-gray-300 hover:bg-gray-100"
+                }`}
               >
                 {page}
               </button>
@@ -298,16 +435,113 @@ const ManageEmployeePerformance = () => {
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="px-4 py-2 border border-gray-300 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-4 py-2  bg-blue-800 text-white border border-gray-300 rounded-full "
             >
-              Next
+              &gt;
             </button>
-          </div>
+            <button
+              onClick={() => handlePageChange(totalPages)}
+              disabled={currentPage === totalPages}
+              className="px-4 py-2  bg-blue-800 text-white border border-gray-300 rounded-full "
+            >
+              &raquo;
+            </button>
+          </div> */}
+          {!isSearchActive && (
+            <div className="flex justify-center mt-4 space-x-2">
+              <button
+                onClick={() => handlePreviousPage(1)}
+                disabled={currentPage === 1}
+                className="px-4 py-2 bg-blue-800 text-white border border-gray-300 rounded-full"
+              >
+                &laquo;
+              </button>
+              <button
+                onClick={() => handlePreviousPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-4 py-2 bg-blue-800 text-white border border-gray-300 rounded-full"
+              >
+                &lt;
+              </button>
+              {totalPages <= 3 ? (
+                Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <button
+                      key={page}
+                      onClick={() => handleNextPage(page)}
+                      className={`px-4 py-2 border rounded-full ${currentPage === page
+                          ? "text-blue-500 bg-white border-blue-500"
+                          : "text-gray-700 border-gray-300 hover:bg-gray-100"
+                        }`}
+                    >
+                      {page}
+                    </button>
+                  )
+                )
+              ) : (
+                <>
+                  {currentPage > 2 && (
+                    <>
+                      <button
+                        onClick={() => handleNextPage(1)}
+                        className="px-4 py-2 border rounded-full text-gray-700 border-gray-300 hover:bg-gray-100"
+                      >
+                        1
+                      </button>
+                      {currentPage > 3 && <span className="px-2">...</span>}
+                    </>
+                  )}
+                  {Array.from(
+                    { length: 3 },
+                    (_, i) => i + Math.max(1, currentPage - 1)
+                  ).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => handleNextPage(page)}
+                      className={`px-4 py-2 border rounded-full ${currentPage === page
+                          ? "text-blue-500 bg-white border-blue-500"
+                          : "text-gray-700 border-gray-300 hover:bg-gray-100"
+                        }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  {currentPage < totalPages - 1 && (
+                    <>
+                      {currentPage < totalPages - 2 && (
+                        <span className="px-2">...</span>
+                      )}
+                      <button
+                        onClick={() => handleNextPage(totalPages)}
+                        className="px-4 py-2 border rounded-full text-gray-700 border-gray-300 hover:bg-gray-100"
+                      >
+                        {totalPages}
+                      </button>
+                    </>
+                  )}
+                </>
+              )}
+              <button
+                onClick={() => handleNextPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 bg-blue-800 text-white border border-gray-300 rounded-full"
+              >
+                &gt;
+              </button>
+              <button
+                onClick={() => handleNextPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 bg-blue-800 text-white border border-gray-300 rounded-full"
+              >
+                &raquo;
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Calendar Modal */}
-      {showCalendarModal && (
+      {/* {showCalendarModal && (
         <div className="fixed z-10 inset-0 overflow-y-auto flex items-center justify-center">
           <div className="fixed inset-0 transition-opacity" aria-hidden="true">
             <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
@@ -339,7 +573,7 @@ const ManageEmployeePerformance = () => {
                     type="date"
                     id="calendar-date"
                     className="mt-1 focus:ring-blue-500 p-2 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-full"
-                    value={calendarData.year || ''}
+                    value={calendarData.year || ""}
                     onChange={handleCalendarInputChange}
                   />
                 </div>
@@ -362,10 +596,10 @@ const ManageEmployeePerformance = () => {
             </div>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Edit Modal */}
-      {showModal && (
+      {showEditModal && (
         <div className="fixed z-10 inset-0 overflow-y-auto flex items-center justify-center">
           <div className="fixed inset-0 transition-opacity" aria-hidden="true">
             <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
@@ -377,7 +611,7 @@ const ManageEmployeePerformance = () => {
                   Edit Employee Performance
                 </h3>
                 <button
-                  onClick={() => setShowModal(false)}
+                  onClick={() => setShowEditModal(false)}
                   className="text-gray-500 hover:text-gray-600"
                 >
                   <RxCross2 />
@@ -387,86 +621,107 @@ const ManageEmployeePerformance = () => {
             <div className="bg-gray-100 px-4 py-6 overflow-y-auto">
               <form onSubmit={handleEdit} className="space-y-3">
                 <div className="flex flex-col gap-2">
-                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                    First Name <span className="text-red-500">*</span>
+                  <label
+                    htmlFor="firstName"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Employee Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     id="firstName"
                     name="firstName"
-                    onChange={handleModalInputChange}
-                    placeholder="First Name"
+                    value={editData.employeeName || ""}
+                    onChange={handleEditInputChange}
                     className="focus:ring-blue-500 p-1.5 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-full"
                   />
                 </div>
-                <div className="flex flex-col gap-2">
-                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
+                {/* <div className="flex flex-col gap-2">
+                  <label
+                    htmlFor="lastName"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Last Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     id="lastName"
                     name="lastName"
-                    onChange={handleModalInputChange}
-                    placeholder="Last Name"
+                    value={editData.lastName || ""}
+                    onChange={handleEditInputChange}
                     className="focus:ring-blue-500 p-1.5 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-full"
                   />
-                </div>
+                </div> */}
                 <div className="flex flex-col gap-2">
-                  <label htmlFor="empId" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="empId"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Employee Id <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     id="empId"
                     name="empId"
-                    onChange={handleModalInputChange}
-                    placeholder="Employee Id"
+                    value={editData.empId || ""}
+                    onChange={handleEditInputChange}
                     className="focus:ring-blue-500 p-1.5 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-full"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label htmlFor="note" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="note"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Note <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     id="note"
                     name="note"
-                    onChange={handleModalInputChange}
-                    placeholder="Note"
+                    value={editData.note || ""}
+                    onChange={handleEditInputChange}
                     className="focus:ring-blue-500 p-1.5 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-full"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label htmlFor="numberOfStar" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="numberOfStar"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Number of Stars <span className="text-red-500">*</span>
                   </label>
                   <input
-                    type="text"
+                    type="number"
                     id="numberOfStar"
                     name="numberOfStar"
-                    onChange={handleModalInputChange}
-                    placeholder="Number Of Stars"
+                    value={editData.numberOfStar || ""}
+                    onChange={handleEditInputChange}
+                    min="1"
+                    max="5"
                     className="focus:ring-blue-500 p-1.5 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-full"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label htmlFor="year" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="year"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Month & Year <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
                     id="year"
                     name="year"
-                    onChange={handleModalInputChange}
+                    value={editData.year || ""}
+                    onChange={handleEditInputChange}
                     className="focus:ring-blue-500 p-1.5 focus:border-blue-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-full"
                   />
                 </div>
                 <div className="flex justify-end gap-3 mt-4">
                   <button
                     type="button"
-                    onClick={() => setShowModal(false)}
+                    onClick={() => setShowEditModal(false)}
                     className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 border border-transparent rounded-full shadow-sm hover:bg-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-indigo-500"
                   >
                     Close
@@ -483,9 +738,9 @@ const ManageEmployeePerformance = () => {
           </div>
         </div>
       )}
+      <div id="modal-root"></div>
     </>
   );
 };
 
-export default ManageEmployeePerformance;
-
+export default NewManageEmployeePerformance;

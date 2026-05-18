@@ -2,17 +2,8 @@ import { createBrowserRouter } from "react-router-dom";
 import { CompanyProfile } from "../layout/CompanyProfile";
 import { Home } from "../pages/Home";
 import { Address } from "../components/company_profile/Address";
-import { Admin } from "../components/company_profile/Admin";
-import { Announcement } from "../components/company_profile/Announcement";
-import { Department } from "../components/company_profile/Department";
-import { Designation } from "../components/company_profile/Designation";
-import { Myplan } from "../components/company_profile/Myplan";
-import { Policies } from "../components/company_profile/Policies";
-import { Statutory } from "../components/company_profile/Statutory";
-import { Signup1 } from "../components/signup/Signup1";
 import Login from "../components/login/Login";
 import ForgotPassword from "../components/login/ForgotPassword";
-import { Sidebar } from "../components/Sidebar";
 import { MyProfile } from "../layout/MyProfile";
 import { Work } from "../components/my_profile/Work";
 import { Team } from "../components/my_profile/Team";
@@ -23,24 +14,12 @@ import { Personal } from "../components/my_profile/Personal";
 import { Document } from "../components/my_profile/Document";
 import CheckAuth from "../components/CheckAuth";
 import { Workweek } from "../components/my_profile/Workweek";
-import AllPosition from "../components/employee/AllPosition";
-import ManagePosition from "../components/employee/ManagePosition";
-import Division from "../components/company_profile/Division";
-import Departments from "../layout/Departments";
-import NoticeBoard from "../components/noticeBoard/NoticeBoard";
 import Leave from "../layout/Leave";
 import { WeeklyHoliday } from "../components/leave/WeeklyHoliday";
 import Holiday from "../components/leave/Holiday";
 import AddLeaveType from "../components/leave/AddLeaveType";
 import LeaveApplication from "../components/leave/LeaveApplication";
-// import CandidateInformation from "../components/recruiment/CandidateInforation";
-import AddNewCandidate from "../components/recruiment/AddNewCandidate";
 import AddEmployee from "../components/employee/AddEmployee";
-import Interview from "../components/recruiment/Interview";
-import SalaryBenefits from "../components/payroll/SalaryBenefits";
-import ViewNotice from "../components/noticeBoard/ViewNotice";
-import SalarySetup from "../components/payroll/SalarySetup";
-// import {Attendence} from "../layout/Attendence";
 import AddEquipment from "../components/asset/equipment/AddEquipment";
 import AllEquipment from "../components/asset/equipment/AllEquipment";
 import Asset from "../layout/Asset";
@@ -52,7 +31,7 @@ import MonthlyAbsent from "../components/report/MonthlyAbsent";
 import AddAssetType from "../components/asset/AddAssetType";
 import AllAssetType from "../components/asset/AllAssetType";
 import ManageAssetType from "../components/asset/ManageAssetType";
-import { EmployeeAttendance } from "../components/employeeComponents/EmployeeAttendance";
+
 import AttendanceLogs from "../components/attendance/AttendanceLog";
 import EmployeeOnLeave from "../components/report/EmployeeOnLeave";
 import DemographicReport from "../components/report/DemographicReport";
@@ -63,53 +42,29 @@ import AssetInfo from "../components/report/AssetInfo";
 import BenefitReport from "../components/report/BenefitReport";
 import CustomReport from "../components/report/CustomReport";
 import ManageEquipments from "../components/asset/equipment/ManageEquipments";
-import AddEmployeePerformance from "../components/employee/AddEmployeePerformance";
-import AllEmployeePerformance from "../components/employee/AllEmployeePerformance";
-import ManageEmployeeSalary from "../components/payroll/ManageEmployeeSalary";
 import AssignAsset from "../components/asset/AssignAsset";
 import ManageEmployeePerformance from "../components/employee/ManageEmployeePerformance";
-import ManageCandidate from "../components/recruiment/ManageCandidate/ManageCandidate";
-import Recruitment from "../layout/Recruitment";
-import Attendance from "../layout/Attendence";
-import CandidateSelection from "../components/recruiment/CandidateSelection";
+import Attendance from "../layout/Attendance";
 import ManageEmployee from "../components/employee/ManageEmployee";
-import CandidateInformation from "../components/recruiment/CandidateInforation";
 import SalaryGenerate from "../components/report/SalaryGenerate";
-import Register from "../components/Register";
 import RoleBasedRoute from "../components/RoleBasedRoute";
-import EmployeeDashboard from "../components/EmployeeDashboard";
-import EmployeeDashboardLayout from "../layout/EmployeeDashboardLayout";
-import Payroll from "../components/employeeComponents/EmployeePayroll";
-import EmployeeLeave from "../components/employeeComponents/EmployeeLeave";
-import EmployeePayroll from "../components/employeeComponents/EmployeePayroll";
-import EmployeeAsset from "../components/employeeComponents/EmployeeAsset";
 import AnnualHoliday from "../components/AnnualHoliday";
-import AttendanceForm from "../components/attendance/AttendenceForm";
-import Recruitment_Management from "../components/recruiment/Recruitment_Management";
-import EmployeeRecruitment from "../components/recruiment/EmployeeRecruitment";
-import AllRecruitments from "../components/recruiment/AllRecruitments";
+import AttendanceForm from "../components/attendance/AttendanceForm";
 import { Announcements } from "../layout/Annoucements";
 import MyProfileShow from "../components/MyProfileShow";
 import SalarySlip from "../components/payroll/SalarySlip";
 import CompanyProfileSidenav from "../components/sidebarComponentLink/CompanyProfileSidenav";
 import { Letter } from "../layout/Letter";
 import CreateLetter from "../components/letter/CreateLetter";
-import Invite_New_Employee from "../components/Invite_New_Employee";
 import EmployeeSidebar from "../components/sidebarComponentLink/EmployeeSidebar";
 import AssetProfileSidenav from "../components/sidebarComponentLink/AssetProfile";
 import AttendanceSidebar from "../components/sidebarComponentLink/AttendanceSidebar";
-import RecruitmentSidebar from "../components/sidebarComponentLink/RecruitmentSidebar";
 import ReportSidebar from "../components/sidebarComponentLink/ReportSidebar";
 import PayrollSidebar from "../components/sidebarComponentLink/PayrollSidebar";
-import Drafts from "../components/asset/Drafts";
-import SentLetters from "../components/asset/SentLetters";
-import PostOffice from "../components/asset/PostOffice";
-import NewLetter from "../components/asset/NewLetter";
-import NewEmployeeBasic from "../components/new_employee/NewEmployeeBasic";
-import NewEmployeeMain from "../components/new_employee/NewEmployeeMain";
-import IncomeTax from "../components/payroll/IncomeTax";
-import DeclarationWindowMain from "../components/payroll/Declaration";
-import LeavePolicies from "../components/leavePolicies/LeavePolicies";
+import Drafts from "../components/letter/Drafts";
+import SentLetters from "../components/letter/SentLetters";
+import PostOffice from "../components/letter/PostOffice";
+import NewLetter from "../components/letter/NewLetter";
 import Letters from "../components/sidebarComponentLink/Letters";
 import NewAttendance from "../components/attendance/NewAttendance";
 import LateCome_EarlyGo_Policy from "../components/company_profile/LateComePolicy";
@@ -121,27 +76,19 @@ import EmployeeLeavePolicy from "../components/company_profile/EmployeeLeavePoli
 import SalaryPolicy from "../components/company_profile/SalaryPolicy";
 import HRPolicy from "../components/company_profile/HRPolicy";
 import NewAssetAssign from "../components/asset/equipment/NewAssetAssign";
-import NewManageEmployee from "../components/employee/NewManageEmployee";
-import NewManageEmployeePerformance from "../components/employee/NewManageEmpPerformance";
 import NewAssetType from "../components/asset/equipment/NewAssetType";
-import NewDesignation from "../components/company_profile/NewDesignation";
+import NewDesignation from "../components/company_profile/Designation";
 import NewLeaveApplication from "../components/leave/NewLeaveApplication";
-import NewRecruitmentManagement from "../components/recruiment/NewRecruitmentManagement";
 import NewAllEquipment from "../components/asset/equipment/NewEquipment";
 import Form16 from "../components/form16";
-import PackageProration from "../components/payroll/PackageProration";
-import TaxSheet from "../components/payroll/Tax_Sheet";
-import AddNewCandidate2 from "../components/recruiment/AddNewCandidate2";
 import NewMonthlyAttendance from "../components/attendance/NewMonthlyAttendance";
-import { NewAnnouncement } from "../components/company_profile/NewAnnouncement";
+import { Announcement } from "../components/company_profile/Announcement";
 import NewAssetInfo from "../components/report/NewAssetInfo";
 import NewBenefitReport from "../components/report/NewBenefit";
-import AddEmployee2 from "../components/employeeComponents/AddEmployee2";
 import PaySlip from "../components/payroll/PaySlip";
-import Overview2 from "../components/company_profile/Overview2";
+import Overview2 from "../components/company_profile/Overview";
 import { BusinessUnit } from "../components/company_profile/BusinessUnit";
-import NewDepartment from "../components/company_profile/NewDepartment";
-import DirectoryMain from "../components/employeeComponents/Directory";
+import NewDepartment from "../components/company_profile/Department";
 import AttendanceBonusPolicy from "../components/company_profile/AttendanceBonusPolicy";
 import EmployeeUpdate from "../components/employee/EmployeeUpdate";
 import PayRollDashboard from "../components/payroll/PayRollDashboard";
@@ -173,39 +120,6 @@ const redirectPaths = {
 };
 
 const router = createBrowserRouter([
-  {
-    path: "/emp",
-    element: (
-      <RoleBasedRoute
-        element={EmployeeDashboardLayout}
-        allowedRoles={["employee"]}
-        redirectPaths={redirectPaths}
-      />
-    ),
-    children: [
-      {
-        path: "dashboard",
-        element: <EmployeeDashboard />,
-      },
-      {
-        path: "attendance",
-        element: <EmployeeAttendance />,
-      },
-      {
-        path: "leave",
-        element: <EmployeeLeave />,
-      },
-      {
-        path: "payroll",
-        element: <EmployeePayroll />,
-      },
-      {
-        path: "assign-asset",
-        element: <EmployeeAsset />,
-      },
-    ],
-  },
-
   // letter
   {
     path: "/letter",
@@ -261,7 +175,7 @@ const router = createBrowserRouter([
         path: "",
         element: (
           <CheckAuth>
-            <NewAnnouncement />
+            <Announcement />
           </CheckAuth>
         ),
       },
@@ -306,15 +220,6 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "recruitment",
-        element: (
-          <CheckAuth>
-            <RecruitmentSidebar />
-          </CheckAuth>
-        ),
-      },
-
-      {
         path: "letter",
         element: (
           <CheckAuth>
@@ -335,14 +240,6 @@ const router = createBrowserRouter([
         element: (
           <CheckAuth>
             <PayrollSidebar />
-          </CheckAuth>
-        ),
-      },
-      {
-        path: "companyProfile/policies/leave",
-        element: (
-          <CheckAuth>
-            <LeavePolicies />
           </CheckAuth>
         ),
       },
@@ -386,14 +283,6 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "admin",
-        element: (
-          <CheckAuth>
-            <Admin />
-          </CheckAuth>
-        ),
-      },
-      {
         path: "department",
         element: (
           <CheckAuth>
@@ -410,23 +299,6 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "divison",
-        element: (
-          <CheckAuth>
-            <Division />
-          </CheckAuth>
-        ),
-      },
-      // {
-      //   path: "designation",
-      //   element: (
-      //     <CheckAuth>
-      //       <Designation />
-      //     </CheckAuth>
-      //   ),
-      // },
-
-      {
         path: "designation",
         element: (
           <CheckAuth>
@@ -434,23 +306,6 @@ const router = createBrowserRouter([
           </CheckAuth>
         ),
       },
-      {
-        path: "myplan",
-        element: (
-          <CheckAuth>
-            <Myplan />
-          </CheckAuth>
-        ),
-      },
-      {
-        path: "policies",
-        element: (
-          <CheckAuth>
-            <Policies />
-          </CheckAuth>
-        ),
-      },
-
       {
         path: "late-come-policy",
         element: (
@@ -520,16 +375,7 @@ const router = createBrowserRouter([
             <HRPolicy />
           </CheckAuth>
         ),
-      },
-
-      {
-        path: "statutory",
-        element: (
-          <CheckAuth>
-            <Statutory />
-          </CheckAuth>
-        ),
-      },
+      }
     ],
   },
   {
@@ -617,76 +463,15 @@ const router = createBrowserRouter([
       },
     ],
   },
-
-  //department
-  {
-    path: "/departments",
-    element: (
-      <CheckAuth>
-        <Departments />
-      </CheckAuth>
-    ),
-    children: [
-      {
-        path: "department",
-        element: (
-          <CheckAuth>
-            <Department />
-          </CheckAuth>
-        ),
-      },
-      {
-        path: "division",
-        element: (
-          <CheckAuth>
-            <Division />
-          </CheckAuth>
-        ),
-      },
-    ],
-  },
   {
     path: "/payroll",
     element: <Leave />,
     children: [
       {
-        path: "package-proration",
-        element: (
-          <CheckAuth>
-            <PackageProration />
-          </CheckAuth>
-        ),
-      },
-      {
         path: "salary-slip",
         element: (
           <CheckAuth>
             <SalarySlip />
-          </CheckAuth>
-        ),
-      },
-      {
-        path: "income-tax",
-        element: (
-          <CheckAuth>
-            <IncomeTax />
-          </CheckAuth>
-        ),
-      },
-
-      {
-        path: "tax-sheet",
-        element: (
-          <CheckAuth>
-            <TaxSheet />
-          </CheckAuth>
-        ),
-      },
-      {
-        path: "IT-declaration",
-        element: (
-          <CheckAuth>
-            <DeclarationWindowMain />
           </CheckAuth>
         ),
       },
@@ -698,23 +483,6 @@ const router = createBrowserRouter([
           </CheckAuth>
         ),
       },
-      {
-        path: "salary-benefits",
-        element: (
-          <CheckAuth>
-            <SalaryBenefits />
-          </CheckAuth>
-        ),
-      },
-      {
-        path: "salary-setup",
-        element: (
-          <CheckAuth>
-            <SalarySetup />
-          </CheckAuth>
-        ),
-      },
-
       {
         path: "pay-slip",
         element: (
@@ -782,14 +550,6 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "ManageEmployeeSalary",
-        element: (
-          <CheckAuth>
-            <ManageEmployeeSalary />
-          </CheckAuth>
-        ),
-      },
-      {
         path: "salaryGenerate",
         element: (
           <CheckAuth>
@@ -830,102 +590,6 @@ const router = createBrowserRouter([
       },
     ],
   },
-
-  {
-    path: "/recruitment",
-    element: <Recruitment />,
-    children: [
-      // {
-      //   path: "candidateInfo",
-      //   element: (
-      //     <CheckAuth>
-      //       <CandidateInformation />
-      //     </CheckAuth>
-      //   ),
-      // },
-      {
-        path: "add-candidate",
-        element: (
-          <CheckAuth>
-            <AddNewCandidate2 />
-          </CheckAuth>
-        ),
-      },
-      {
-        path: "candidate-information",
-        element: (
-          <CheckAuth>
-            <CandidateInformation />
-          </CheckAuth>
-        ),
-      },
-      {
-        path: "interview",
-        element: (
-          <CheckAuth>
-            <Interview />
-          </CheckAuth>
-        ),
-      },
-      {
-        path: "manage-candidate",
-        element: (
-          <CheckAuth>
-            <ManageCandidate />
-          </CheckAuth>
-        ),
-      },
-      // {
-      //   path: "recruitment-management",
-      //   element: (
-      //     <CheckAuth>
-      //       <Recruitment_Management />
-      //     </CheckAuth>
-      //   ),
-      // },
-      {
-        path: "recruitment-management",
-        element: (
-          <CheckAuth>
-            <NewRecruitmentManagement />
-          </CheckAuth>
-        ),
-      },
-      {
-        path: "employee-recruitment",
-        element: (
-          <CheckAuth>
-            <EmployeeRecruitment />
-          </CheckAuth>
-        ),
-      },
-
-      {
-        path: "all-recruitment",
-        element: (
-          <CheckAuth>
-            <AllRecruitments />
-          </CheckAuth>
-        ),
-      },
-      {
-        path: "candidate-selection",
-        element: (
-          <CheckAuth>
-            <CandidateSelection />
-          </CheckAuth>
-        ),
-      },
-      {
-        path: "salary-setup",
-        element: (
-          <CheckAuth>
-            <SalarySetup />
-          </CheckAuth>
-        ),
-      },
-    ],
-  },
   {
     path: "/attendance",
     element: <Attendance />,
@@ -958,27 +622,10 @@ const router = createBrowserRouter([
     element: <CompanyProfile />,
     children: [
       {
-        path: "invite_new_employee",
-        element: (
-          <CheckAuth>
-            <Invite_New_Employee />
-          </CheckAuth>
-        ),
-      },
-      {
         path: "add-employee",
         element: (
           <CheckAuth>
-            <AddEmployee2 />
-          </CheckAuth>
-        ),
-      },
-
-      {
-        path: "directory",
-        element: (
-          <CheckAuth>
-            <DirectoryMain />
+            <AddEmployee />
           </CheckAuth>
         ),
       },
@@ -1006,74 +653,22 @@ const router = createBrowserRouter([
           </CheckAuth>
         ),
       },
-
-      // {
-      //   path: "manage-employee",
-      //   element: (
-      //     <CheckAuth>
-      //       <ManageEmployee />
-      //     </CheckAuth>
-      //   ),
-      // },
-
       {
         path: "manage-employee",
         element: (
           <CheckAuth>
-            <NewManageEmployee />
+            <ManageEmployee />
           </CheckAuth>
         ),
       },
-      {
-        path: "manage-position",
-        element: (
-          <CheckAuth>
-            <ManagePosition />
-          </CheckAuth>
-        ),
-      },
-      {
-        path: "all-position",
-        element: (
-          <CheckAuth>
-            <AllPosition />
-          </CheckAuth>
-        ),
-      },
-
-      {
-        path: "add-employee-performance",
-        element: (
-          <CheckAuth>
-            <AddEmployeePerformance />
-          </CheckAuth>
-        ),
-      },
-      {
-        path: "all-employee-performance",
-        element: (
-          <CheckAuth>
-            <AllEmployeePerformance />
-          </CheckAuth>
-        ),
-      },
-
       {
         path: "manage-employee-performance",
         element: (
           <CheckAuth>
-            <NewManageEmployeePerformance />
+            <ManageEmployeePerformance />
           </CheckAuth>
         ),
       },
-      // {
-      //   path: "manage-employee-performance",
-      //   element: (
-      //     <CheckAuth>
-      //       <ManageEmployeePerformance />
-      //     </CheckAuth>
-      //   ),
-      // },
     ],
   },
 
@@ -1345,24 +940,7 @@ const router = createBrowserRouter([
           </CheckAuth>
         ),
       },
-      // {
-      //   path: "salaryGenerate",
-      //   element: (
-      //     <CheckAuth>
-      //       <SalaryGenerate />
-      //     </CheckAuth>
-      //   ),
-      // },
     ],
-  },
-  {
-    path: "/noticeboard",
-    element: (
-      <CheckAuth>
-        <CompanyProfile />
-        <NoticeBoard />
-      </CheckAuth>
-    ),
   },
   {
     path: "/",
@@ -1371,15 +949,6 @@ const router = createBrowserRouter([
         <Home />
       </CheckAuth>
     ),
-  },
-
-  {
-    path: "/newemployee",
-    element: <NewEmployeeMain />,
-  },
-  {
-    path: "/newemployee/basic",
-    element: <NewEmployeeBasic />,
   },
   {
     path: "/login",
@@ -1391,21 +960,9 @@ const router = createBrowserRouter([
     element: <CheckAuth />,
   },
   {
-    path: "/sign-up",
-    element: <Signup1 />,
-  },
-  {
-    path: "/register",
-    element: <Register />,
-  },
-  {
     path: "/forgetPassword",
     element: <ForgotPassword />,
-  },
-  {
-    path: "/sidebar",
-    element: <Sidebar />,
-  },
+  }
 ]);
 
 export default router;

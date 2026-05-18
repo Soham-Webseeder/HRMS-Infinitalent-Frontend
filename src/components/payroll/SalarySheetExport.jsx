@@ -22,6 +22,13 @@ const SalarySheetExport = ({ fileName, salaryCycle, selectedBusinessUnit, busine
     setLoading(true);
     setErrorMessage("");
     try {
+      // 1. Retrieve the token from localStorage (adjust the key name 'token' if your app uses something else, like 'authToken')
+      const token = localStorage.getItem("token");
+      
+      if (!token) {
+        throw new Error("Authentication token missing. Please log in again.");
+      }
+
       // Use getAllPayrollsByMonthAndBusinessUnit API
       const response = await axios.get(
         `${import.meta.env.VITE_APP_BASE_URL}/payroll/getAllPayrollsByMonthAndBusinessUnit`,
@@ -30,6 +37,10 @@ const SalarySheetExport = ({ fileName, salaryCycle, selectedBusinessUnit, busine
             year: salaryCycle.split("-")[0],
             month: salaryCycle.split("-")[1],
             businessUnit: selectedBusinessUnit || "All",
+          },
+          // 2. Pass the Authorization header containing the Bearer token
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -105,7 +116,9 @@ const SalarySheetExport = ({ fileName, salaryCycle, selectedBusinessUnit, busine
       XLSX.writeFile(workbook, `${fileName}_SalarySheet_${istDate}.xlsx`);
     } catch (error) {
       console.error("Error fetching salary sheet data:", error.message);
-      setErrorMessage(error.message || "Failed to export salary sheet. Please try again later.");
+      // Fallback message to capture Axios error structure or a custom thrown error
+      const userFriendlyMessage = error.response?.data?.message || error.message || "Failed to export salary sheet. Please try again later.";
+      setErrorMessage(userFriendlyMessage);
     } finally {
       setLoading(false);
     }
@@ -113,10 +126,10 @@ const SalarySheetExport = ({ fileName, salaryCycle, selectedBusinessUnit, busine
 
   return (
     <div>
-      {errorMessage && <p className="text-red-600">{errorMessage}</p>}
+      {errorMessage && <p className="text-red-600 mb-2">{errorMessage}</p>}
       <button
         onClick={exportToExcel}
-        className={`bg-blue-500 text-white px-6 py-2 rounded-full hover:bg-blue-600 ${loading ? "opacity-50 cursor-not-allowed" : ""
+        className={`bg-blue-500 text-white px-6 py-2 rounded-full hover:bg-blue-600 flex items-center justify-center ${loading ? "opacity-50 cursor-not-allowed" : ""
           }`}
         disabled={loading}
       >
